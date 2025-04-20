@@ -1,103 +1,243 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import { Container, Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import Header from './components/Header';
+import ActionButtons from './components/ActionButtons';
+import TabPanel from './components/TabPanel';
+import { 
+  TableRowType, 
+  firstTabTableColumns, 
+  secondTabTableColumns, 
+  initialData, 
+  ParamItem, 
+  Pattern1Item,
+  Pattern2Item
+} from './data';
+
+// テーマの作成
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+  },
+});
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // 状態管理
+  const [data, setData] = useState<TableRowType[]>(initialData);
+  const [activeTab, setActiveTab] = useState(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  // データ変更ハンドラー
+  const handleDataChange = (rowId: string, fieldId: string, value: any) => {
+    setData(prevData => 
+      prevData.map(row => {
+        if (row.prefix === rowId) {
+          // アイテムタイプが変更された場合、適切なパターンのデータを初期化
+          if (fieldId === 'itemType') {
+            if (value === 'pattern1') {
+              // pattern1に変更された場合、pattern1を初期化し、pattern2を空にする
+              return { 
+                ...row, 
+                itemType: value,
+                pattern1: row.pattern1.length > 0 ? row.pattern1 : [{ 
+                  pattern1Value: '', 
+                  pattern1JP: '', 
+                  pattern1Desc: '' 
+                }],
+                pattern2: []
+              };
+            } else if (value === 'pattern2') {
+              // pattern2に変更された場合、pattern2を初期化し、pattern1を空にする
+              return { 
+                ...row, 
+                itemType: value,
+                pattern1: [],
+                pattern2: row.pattern2.length > 0 ? row.pattern2 : [{ 
+                  pattern2Min: 0, 
+                  pattern2Max: 100, 
+                  pattern2Increment: 10 
+                }]
+              };
+            }
+          }
+          // 通常のフィールド変更
+          return { ...row, [fieldId]: value };
+        }
+        return row;
+      })
+    );
+  };
+
+  // サブアイテム変更ハンドラー
+  const handleSubItemChange = (rowId: string, subItemIndex: number, fieldId: string, value: any) => {
+    setData(prevData => 
+      prevData.map(row => {
+        if (row.prefix === rowId) {
+          if (activeTab === 0) {
+            // 1つ目のタブのパラメータ
+            const newParams = [...row.params];
+            newParams[subItemIndex] = { 
+              ...newParams[subItemIndex], 
+              [fieldId]: value 
+            };
+            return { ...row, params: newParams };
+          } else {
+            // 2つ目のタブのパターン
+            if (fieldId.startsWith('pattern1')) {
+              const newPattern1 = [...row.pattern1];
+              newPattern1[subItemIndex] = { 
+                ...newPattern1[subItemIndex], 
+                [fieldId]: value 
+              };
+              return { ...row, pattern1: newPattern1 };
+            } else if (fieldId.startsWith('pattern2')) {
+              const newPattern2 = [...row.pattern2];
+              newPattern2[subItemIndex] = { 
+                ...newPattern2[subItemIndex], 
+                [fieldId]: value 
+              };
+              return { ...row, pattern2: newPattern2 };
+            }
+          }
+        }
+        return row;
+      })
+    );
+  };
+
+  // サブアイテム追加ハンドラー
+  const handleAddSubItem = (rowId: string, tabIndex: number) => {
+    setData(prevData => 
+      prevData.map(row => {
+        if (row.prefix === rowId) {
+          if (tabIndex === 0) {
+            // 1つ目のタブのパラメータ追加
+            const newParam: ParamItem = { 
+              param: '', 
+              paramType: '', 
+              paramJP: '' 
+            };
+            return { ...row, params: [...row.params, newParam] };
+          } else {
+            // 2つ目のタブのパターン追加
+            if (row.itemType === 'pattern1') {
+              const newPattern1Item: Pattern1Item = { 
+                pattern1Value: '', 
+                pattern1JP: '', 
+                pattern1Desc: '' 
+              };
+              return { ...row, pattern1: [...row.pattern1, newPattern1Item] };
+            } else {
+              const newPattern2Item: Pattern2Item = { 
+                pattern2Min: 0, 
+                pattern2Max: 100, 
+                pattern2Increment: 10 
+              };
+              return { ...row, pattern2: [...row.pattern2, newPattern2Item] };
+            }
+          }
+        }
+        return row;
+      })
+    );
+  };
+
+  // サブアイテム削除ハンドラー
+  const handleRemoveSubItem = (rowId: string, subItemIndex: number, tabIndex: number) => {
+    setData(prevData => {
+      const updatedData = prevData.map(row => {
+        if (row.prefix === rowId) {
+          if (tabIndex === 0) {
+            // 1つ目のタブのパラメータ削除
+            const newParams = [...row.params];
+            newParams.splice(subItemIndex, 1);
+            
+            // パラメータが空になった場合はnullを返し、後でフィルタリング
+            if (newParams.length === 0) {
+              return null;
+            }
+            
+            return { ...row, params: newParams };
+          } else {
+            // 2つ目のタブのパターン削除
+            if (row.itemType === 'pattern1') {
+              const newPattern1 = [...row.pattern1];
+              newPattern1.splice(subItemIndex, 1);
+              
+              if (newPattern1.length === 0) {
+                return null;
+              }
+              
+              return { ...row, pattern1: newPattern1 };
+            } else {
+              const newPattern2 = [...row.pattern2];
+              newPattern2.splice(subItemIndex, 1);
+              
+              if (newPattern2.length === 0) {
+                return null;
+              }
+              
+              return { ...row, pattern2: newPattern2 };
+            }
+          }
+        }
+        return row;
+      });
+      
+      // nullの行（サブアイテムが空になった行）を除外
+      return updatedData.filter(row => row !== null) as TableRowType[];
+    });
+  };
+
+  // JSONダウンロードハンドラー
+  const handleDownload = () => {
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'table-data.json';
+    link.click();
+    
+    URL.revokeObjectURL(url);
+  };
+
+  // データ登録ハンドラー（モック）
+  const handleRegister = () => {
+    // 実際のAPIエンドポイントが決まったら置き換え
+    console.log('データを登録します:', data);
+    alert('データが正常に登録されました');
+  };
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <Header />
+        <Container maxWidth={false} disableGutters sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ p: 2 }}>
+            <ActionButtons
+              data={data} 
+              onDownload={handleDownload} 
+              onRegister={handleRegister} 
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          </Box>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <TabPanel
+              data={data}
+              firstTabColumns={firstTabTableColumns}
+              secondTabColumns={secondTabTableColumns}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onDataChange={handleDataChange}
+              onSubItemChange={handleSubItemChange}
+              onAddSubItem={handleAddSubItem}
+              onRemoveSubItem={handleRemoveSubItem}
+            />
+          </Box>
+        </Container>
+      </Box>
+    </ThemeProvider>
   );
 }
