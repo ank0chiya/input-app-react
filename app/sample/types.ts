@@ -40,6 +40,6 @@ export interface ParamType {
   export interface Column {
     id: keyof TableRowType | string; // params のようなネスト構造も含むため string も許容
     label: string;
-    type: 'text' | 'checkbox' | 'nested' | 'actions';
+    type: 'text' | 'checkbox' | 'nested' | 'actions' | 'dropdown';
     subColumns?: SubColumn[]; // nested 型の場合にサブカラム定義を持つ
   }
