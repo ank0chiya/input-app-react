@@ -1,18 +1,16 @@
 // components/DetailTable.tsx
 'use client';
-// ★ useState, useEffect, useCallback 等をインポート
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, JSX } from 'react';
 import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
     Checkbox, TextField, Button, IconButton, Box, Select, MenuItem, FormControl,
-    Stack, Tooltip, Typography, InputLabel, // InputLabel を追加
+    Stack, Tooltip, Typography, InputLabel, Grid, // Grid を追加
 } from '@mui/material';
-// ★ アイコンは params 以外では不要かも
-// import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-// import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+// Pattern1Editor, Pattern2Editor をインポートまたは定義 (後述)
+// import { Pattern1Editor, Pattern2Editor } from './PatternEditors';
 import { TableRowType, Column, ParamType, Pattern1Type, Pattern2Type } from '../types';
-// ★ secondTabTableColumns をインポート
-import { secondTabTableColumns } from '../config/tableColumn'; // 適切なパスに変更
+// secondTabTableColumns はヘッダー構造が複雑なため、直接JSXで記述
+
 
 // ★ Pattern1Editor と Pattern2Editor の実装例（DetailTable 内または別ファイル）
 const Pattern1Editor = ({ pattern1Data, onChange, disabled = false }: { pattern1Data: Pattern1Type, onChange: (field: keyof Pattern1Type, value: string) => void, disabled?: boolean }) => {
@@ -41,39 +39,79 @@ const Pattern2Editor = ({ pattern2Data, onChange, disabled = false }: { pattern2
 };
 
 interface DetailTableProps {
-    tableData: TableRowType[]; // 全データを受け取る
-    // 親コンポーネントにデータ変更を通知するコールバック
+    tableData: TableRowType[];
     onDataChange: (updatedRow: TableRowType, originalIndex: number) => void;
 }
 
-const DetailTable = ({ tableData, onDataChange }: DetailTableProps): JSX.Element => {
-    // ★ カラム定義を使用
-    const columns: Column[] = secondTabTableColumns;
 
-    // ★ 表示対象のデータ（selected === true の行）をフィルタリング
-    // useMemo を使って不要な再計算を防ぐ
-    // 元のインデックスも保持しておく
-    const selectedRows = useMemo(() => {
-        return tableData
-            .map((row, index) => ({ ...row, originalIndex: index })) // 元のインデックスを付与
-            .filter(row => row.selected);
+// 型ガード (TableRowType のキーかチェック)
+function isTableRowKey(key: string | number | symbol, obj: TableRowType): key is keyof TableRowType {
+    return key in obj;
+}
+
+// 型ガード (ParamType のキーかチェック)
+function isParamKey(key: string | number | symbol, obj: ParamType): key is keyof ParamType {
+    return key in obj;
+}
+// ★ DetailTable を再作成
+const DetailTable = ({ tableData, onDataChange }: DetailTableProps): JSX.Element => {
+
+    // 表示対象のパラメータを抽出（親行の情報も保持）
+    const selectedParams = useMemo(() => {
+        const paramsWithOptions: (ParamType & { parentRow: TableRowType; originalRowIndex: number; originalParamIndex: number })[] = [];
+        tableData.forEach((row, rowIndex) => {
+            row.params.forEach((param, paramIndex) => {
+                if (param.selected) {
+                    paramsWithOptions.push({ ...param, parentRow: row, originalRowIndex: rowIndex, originalParamIndex: paramIndex });
+                }
+            });
+        });
+        return paramsWithOptions;
     }, [tableData]);
 
 
     // --- データ変更ハンドラ ---
-    // useCallback でメモ化
-    // DetailTable 内の表示上のインデックス (filteredIndex) と元のインデックス (originalIndex) を使う
-    const handleDetailRowUpdate = useCallback((updatedRow: TableRowType, originalIndex: number) => {
-        // originalIndex を使って親に通知
-        onDataChange(updatedRow, originalIndex);
+    // 親の行データを更新するためのヘルパー
+    const handleParentRowUpdate = useCallback((updatedRowData: TableRowType, originalRowIndex: number) => {
+        onDataChange(updatedRowData, originalRowIndex);
     }, [onDataChange]);
 
-    // セル変更ハンドラ (DataTable のものを流用・調整)
-    const handleCellChange = useCallback((filteredIndex: number, columnId: keyof TableRowType, value: string | boolean | number) => {
-        const targetRow = selectedRows[filteredIndex];
-        const updatedRow = { ...targetRow, [columnId]: value };
-        // itemType が変更された場合の処理
-        if (columnId === 'itemType') {
+    // パラメータ自身のフィールド変更ハンドラ
+    const handleParamFieldChange = useCallback((
+        filteredParamIndex: number, // selectedParams 配列内でのインデックス
+        field: keyof ParamType,
+        value: string | boolean | number
+    ) => {
+        const targetParamInfo = selectedParams[filteredParamIndex];
+        if (!targetParamInfo) return;
+
+        const { parentRow, originalRowIndex, originalParamIndex } = targetParamInfo;
+
+        // 親行の params 配列を更新
+        const updatedParams = parentRow.params.map((param, pIndex) =>
+            pIndex === originalParamIndex ? { ...param, [field]: value } : param
+        );
+        // 更新された行データを作成
+        const updatedRow = { ...parentRow, params: updatedParams };
+        // 親に通知
+        handleParentRowUpdate(updatedRow, originalRowIndex);
+
+    }, [selectedParams, handleParentRowUpdate]);
+
+    // 親行のフィールド変更ハンドラ (itemType, online, pattern1, pattern2)
+    const handleParentFieldChange = useCallback((
+        filteredParamIndex: number, // selectedParams 配列内でのインデックス
+        field: keyof Pick<TableRowType, 'itemType' | 'online' | 'pattern1' | 'pattern2'>, // 対象フィールドを限定
+        value: any
+    ) => {
+        const targetParamInfo = selectedParams[filteredParamIndex];
+        if (!targetParamInfo) return;
+
+        const { parentRow, originalRowIndex } = targetParamInfo;
+        const updatedRow = { ...parentRow, [field]: value };
+
+        // itemType が変更された場合のクリア処理 (任意)
+        if (field === 'itemType') {
             if (value === 'pattern1') {
                 updatedRow.pattern2 = [];
                 if (!updatedRow.pattern1 || updatedRow.pattern1.length === 0) {
@@ -86,119 +124,130 @@ const DetailTable = ({ tableData, onDataChange }: DetailTableProps): JSX.Element
                 }
             }
         }
-        // originalIndex を使って通知
-        handleDetailRowUpdate(updatedRow, targetRow.originalIndex);
-    }, [selectedRows, handleDetailRowUpdate]);
+
+        handleParentRowUpdate(updatedRow, originalRowIndex);
+
+    }, [selectedParams, handleParentRowUpdate]);
+
+    // useCallback でメモ化
+    // DetailTable 内の表示上のインデックス (filteredIndex) と元のインデックス (originalIndex) を使う
+    const handleDetailRowUpdate = useCallback((updatedRow: TableRowType, originalIndex: number) => {
+        // originalIndex を使って親に通知
+        onDataChange(updatedRow, originalIndex);
+    }, [onDataChange]);
 
 
-    // Pattern1 変更ハンドラ
-    const handlePattern1Change = useCallback((filteredIndex: number, field: keyof Pattern1Type, value: string) => {
-        const targetRow = selectedRows[filteredIndex];
-        const updatedPattern1: Pattern1Type[] = [{
-            ...(targetRow.pattern1?.[0] || { pattern1Value: '', pattern1JP: '', pattern1Desc: '' }),
-            [field]: value
-        }];
-        const updatedRow = { ...targetRow, pattern1: updatedPattern1 };
-        handleDetailRowUpdate(updatedRow, targetRow.originalIndex);
-    }, [selectedRows, handleDetailRowUpdate]);
+    // Pattern1 (親行) の変更ハンドラ
+    const handlePattern1Change = useCallback((filteredParamIndex: number, field: keyof Pattern1Type, value: string) => {
+        const targetParamInfo = selectedParams[filteredParamIndex];
+        if (!targetParamInfo) return;
+        const currentPattern1 = targetParamInfo.parentRow.pattern1?.[0] ?? { pattern1Value: '', pattern1JP: '', pattern1Desc: '' };
+        const updatedPattern1: Pattern1Type[] = [{ ...currentPattern1, [field]: value }];
+        handleParentFieldChange(filteredParamIndex, 'pattern1', updatedPattern1);
+    }, [selectedParams, handleParentFieldChange]);
 
-    // Pattern2 変更ハンドラ
-    const handlePattern2Change = useCallback((filteredIndex: number, field: keyof Pattern2Type, value: number) => {
-        const targetRow = selectedRows[filteredIndex];
-        const updatedPattern2: Pattern2Type[] = [{
-            ...(targetRow.pattern2?.[0] || { pattern2Min: 0, pattern2Max: 100, pattern2Increment: 1 }),
-            [field]: value
-        }];
-        const updatedRow = { ...targetRow, pattern2: updatedPattern2 };
-        handleDetailRowUpdate(updatedRow, targetRow.originalIndex);
-    }, [selectedRows, handleDetailRowUpdate]);
-
-    // --- セルレンダリング関数 ---
-    const renderDetailCellContent = useCallback((row: TableRowType & { originalIndex: number }, filteredIndex: number, column: Column) => {
-        const columnId = column.id as keyof TableRowType;
-        const value = row[columnId];
-        const isPattern1 = row.itemType === 'pattern1';
-        const isPattern2 = row.itemType === 'pattern2';
-
-        switch (column.type) {
-            case 'text':
-                // ID は編集不可にする
-                const isDisabled = column.id === 'prefix';
-                return (<TextField variant="standard" size="small" fullWidth disabled={isDisabled} value={typeof value === 'string' || typeof value === 'number' ? value : ''} onChange={(e) => handleCellChange(filteredIndex, columnId, e.target.value)} sx={{ padding: 0, '.MuiInputBase-input': { fontSize: '0.875rem' } }} />);
-            case 'checkbox': // online 用
-                return (<Checkbox checked={typeof value === 'boolean' ? value : false} onChange={(e) => handleCellChange(filteredIndex, columnId, e.target.checked)} size="small" />);
-            case 'dropdown': // itemType 用
-                if (column.id === 'itemType') {
-                    return (
-                        <FormControl size="small" fullWidth>
-                            {/* <InputLabel>アイテムタイプ</InputLabel> */} {/* variant="standard" などを使う場合 */}
-                            <Select
-                                // label="アイテムタイプ"
-                                value={value as 'pattern1' | 'pattern2'}
-                                onChange={(e) => handleCellChange(filteredIndex, columnId, e.target.value as 'pattern1' | 'pattern2')}
-                                variant="standard" // テーブルセル内なので standard が良いかも
-                                sx={{ fontSize: '0.875rem' }}
-                            >
-                                <MenuItem value="pattern1">pattern1</MenuItem>
-                                <MenuItem value="pattern2">pattern2</MenuItem>
-                            </Select>
-                        </FormControl>
-                    );
-                }
-                return '-';
-            case 'nested':
-                if (column.id === 'pattern1') {
-                    // pattern1 のデータを取得 (存在しない場合は初期値)
-                    const pattern1Data = row.pattern1?.[0] ?? { pattern1Value: '', pattern1JP: '', pattern1Desc: '' };
-                    return (
-                        <Pattern1Editor
-                            pattern1Data={pattern1Data}
-                            onChange={(field, val) => handlePattern1Change(filteredIndex, field, val)}
-                            disabled={!isPattern1} // itemType が pattern1 でない場合は無効化
-                        />
-                    );
-                } else if (column.id === 'pattern2') {
-                    // pattern2 のデータを取得 (存在しない場合は初期値)
-                    const pattern2Data = row.pattern2?.[0] ?? { pattern2Min: 0, pattern2Max: 100, pattern2Increment: 1 };
-                    return (
-                        <Pattern2Editor
-                            pattern2Data={pattern2Data}
-                            onChange={(field, val) => handlePattern2Change(filteredIndex, field, val)}
-                            disabled={!isPattern2} // itemType が pattern2 でない場合は無効化
-                        />
-                    );
-                }
-                return '-';
-            default: return '-';
-        }
-    }, [selectedRows, handleCellChange, handlePattern1Change, handlePattern2Change]); // 依存配列
+    // Pattern2 (親行) の変更ハンドラ
+    const handlePattern2Change = useCallback((filteredParamIndex: number, field: keyof Pattern2Type, value: number) => {
+        const targetParamInfo = selectedParams[filteredParamIndex];
+        if (!targetParamInfo) return;
+        const currentPattern2 = targetParamInfo.parentRow.pattern2?.[0] ?? { pattern2Min: 0, pattern2Max: 100, pattern2Increment: 1 };
+        const updatedPattern2: Pattern2Type[] = [{ ...currentPattern2, [field]: value }];
+        handleParentFieldChange(filteredParamIndex, 'pattern2', updatedPattern2);
+    }, [selectedParams, handleParentFieldChange]);
 
     // --- JSX ---
-    if (selectedRows.length === 0) {
-        return <Typography>表示する行が選択されていません。基本情報タブで選択してください。</Typography>;
+    if (selectedParams.length === 0) {
+        return <Typography sx={{ p: 3 }}>表示するパラメータが選択されていません。基本情報タブで選択してください。</Typography>;
     }
-
     return (
         <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 650 }} aria-label="editable detail table">
-                <TableHead sx={{ backgroundColor: 'grey.200' }}>
+            <Table sx={{ minWidth: 900 }} aria-label="editable detail parameter table">
+                <TableHead sx={{ backgroundColor: 'grey.100', '& th': { fontWeight: 'bold', border: '1px solid rgba(224, 224, 224, 1)' } }}>
                     <TableRow>
-                        {/* 詳細情報カラムのヘッダー */}
-                        {columns.map((column) => (<TableCell key={column.id} align="left" sx={{ fontWeight: 'bold', padding: '8px' }}> {column.label} </TableCell>))}
+                        <TableCell rowSpan={2}>ID</TableCell>
+                        <TableCell rowSpan={2}>タイプ</TableCell>
+                        <TableCell rowSpan={2}>設定タイプ</TableCell>
+                        <TableCell rowSpan={2}>パラメータ</TableCell>
+                        <TableCell rowSpan={2}>日本語名</TableCell>
+                        <TableCell rowSpan={2}>アイテムタイプ</TableCell>
+                        <TableCell colSpan={3} align="center">パターン1</TableCell>
+                        <TableCell colSpan={3} align="center">パターン2</TableCell>
+                        <TableCell rowSpan={2}>online</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell align="left" sx={{ fontSize: '0.75rem', py: 0.5 }}>パターン1 値</TableCell>
+                        <TableCell align="left" sx={{ fontSize: '0.75rem', py: 0.5 }}>パターン1 型</TableCell>
+                        <TableCell align="left" sx={{ fontSize: '0.75rem', py: 0.5 }}>パターン1 備考</TableCell>
+                        <TableCell align="left" sx={{ fontSize: '0.75rem', py: 0.5 }}>パターン2 最小値</TableCell>
+                        <TableCell align="left" sx={{ fontSize: '0.75rem', py: 0.5 }}>パターン2 最大値</TableCell>
+                        <TableCell align="left" sx={{ fontSize: '0.75rem', py: 0.5 }}>パターン2 間隔</TableCell>
                     </TableRow>
                 </TableHead>
+                {/* ★★★ TableBody: 選択されたパラメータを行として表示 ★★★ */}
                 <TableBody>
-                    {/* 選択された行のみをレンダリング */}
-                    {selectedRows.map((row, filteredIndex) => (
-                        <TableRow key={row.originalIndex} sx={{ '&:nth-of-type(odd)': { backgroundColor: 'action.hover' }, '& > td': { verticalAlign: 'top' } }}>
-                            {columns.map((column) => (<TableCell key={`${row.originalIndex}-${column.id}`} align="left" component="td" scope="row" sx={column.type === 'nested' ? { padding: '8px' } : { padding: '4px 8px' }}> {renderDetailCellContent(row, filteredIndex, column)} </TableCell>))}
-                        </TableRow>
-                    ))}
+                    {selectedParams.map((paramInfo, filteredIndex) => {
+                        const { parentRow } = paramInfo; // 親行データ
+                        const isPattern1 = parentRow.itemType === 'pattern1';
+                        const isPattern2 = parentRow.itemType === 'pattern2';
+                        // パターンデータ取得 (空の場合の初期値も考慮)
+                        const pattern1Data = parentRow.pattern1?.[0] ?? { pattern1Value: '', pattern1JP: '', pattern1Desc: '' };
+                        const pattern2Data = parentRow.pattern2?.[0] ?? { pattern2Min: 0, pattern2Max: 100, pattern2Increment: 1 };
+
+                        return (
+                            <TableRow key={`${paramInfo.originalRowIndex}-${paramInfo.originalParamIndex}`} sx={{ '&:nth-of-type(odd)': { backgroundColor: 'action.hover' }, '& > td': { border: '1px solid rgba(224, 224, 224, 1)', verticalAlign: 'middle', p: 0.5 } }}> {/* パディング調整 */}
+                                <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{parentRow.prefix}</Typography></TableCell>
+                                <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{parentRow.type}</Typography></TableCell>
+                                <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{parentRow.cfgType}</Typography></TableCell>
+                                {/* パラメータ (編集可能) */}
+                                <TableCell>
+                                    <TextField variant="standard" size="small" fullWidth value={paramInfo.param} onChange={(e) => handleParamFieldChange(filteredIndex, 'param', e.target.value)} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                {/* 日本語名 (編集可能) */}
+                                <TableCell>
+                                    <TextField variant="standard" size="small" fullWidth value={paramInfo.paramJP} onChange={(e) => handleParamFieldChange(filteredIndex, 'paramJP', e.target.value)} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                {/* アイテムタイプ (親行・編集可能) */}
+                                <TableCell>
+                                    <FormControl variant="standard" size="small" fullWidth>
+                                        <Select value={parentRow.itemType} onChange={(e) => handleParentFieldChange(filteredIndex, 'itemType', e.target.value as 'pattern1' | 'pattern2')} sx={{ fontSize: '0.875rem' }}>
+                                            <MenuItem value="pattern1">pattern1</MenuItem>
+                                            <MenuItem value="pattern2">pattern2</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </TableCell>
+                                {/* パターン1 (親行・編集可能・条件付き) */}
+                                <TableCell>
+                                    <TextField variant="standard" size="small" fullWidth value={pattern1Data.pattern1Value} onChange={(e) => handlePattern1Change(filteredIndex, 'pattern1Value', e.target.value)} disabled={!isPattern1} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                <TableCell> {/* 画像の「パターン1 型」列 - データは pattern1JP (説明) を表示 */}
+                                    <TextField variant="standard" size="small" fullWidth value={pattern1Data.pattern1JP} onChange={(e) => handlePattern1Change(filteredIndex, 'pattern1JP', e.target.value)} disabled={!isPattern1} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                <TableCell>
+                                    <TextField variant="standard" size="small" fullWidth value={pattern1Data.pattern1Desc} onChange={(e) => handlePattern1Change(filteredIndex, 'pattern1Desc', e.target.value)} disabled={!isPattern1} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                {/* パターン2 (親行・編集可能・条件付き) */}
+                                <TableCell>
+                                    <TextField type="number" variant="standard" size="small" fullWidth value={pattern2Data.pattern2Min} onChange={(e) => handlePattern2Change(filteredIndex, 'pattern2Min', parseInt(e.target.value, 10) || 0)} disabled={!isPattern2} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                <TableCell>
+                                    <TextField type="number" variant="standard" size="small" fullWidth value={pattern2Data.pattern2Max} onChange={(e) => handlePattern2Change(filteredIndex, 'pattern2Max', parseInt(e.target.value, 10) || 0)} disabled={!isPattern2} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                <TableCell>
+                                    <TextField type="number" variant="standard" size="small" fullWidth value={pattern2Data.pattern2Increment} onChange={(e) => handlePattern2Change(filteredIndex, 'pattern2Increment', parseInt(e.target.value, 10) || 0)} disabled={!isPattern2} InputProps={{ sx: { fontSize: '0.875rem' } }} />
+                                </TableCell>
+                                {/* online (親行・編集可能) */}
+                                <TableCell align="center">
+                                    <Checkbox size="small" checked={parentRow.online} onChange={(e) => handleParentFieldChange(filteredIndex, 'online', e.target.checked)} />
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })}
                 </TableBody>
             </Table>
         </TableContainer>
     );
 };
+
 
 export default DetailTable;
 

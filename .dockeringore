@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+.next # ビルドキャッシュはコピーしない
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+Dockerfile # Dockerfile自体はイメージに不要
+docker-compose*.yml # Composeファイルもイメージに不要
+README.md
+prompt
+# 他に不要なファイルがあれば追記

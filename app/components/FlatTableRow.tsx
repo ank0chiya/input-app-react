@@ -272,7 +272,7 @@ const FlatTableRow: React.FC<FlatTableRowProps> = ({
             {/* ネストされたカラムのサブカラムを表示 */ }
             console.log('nested column:', column);
             {
-              nestedColumn.subColumns.map(subCol => { 
+              nestedColumn.subColumns?.map(subCol => { 
                 console.log('nested subCol:', subCol);
                 console.log('nested subItem:', subItem);
                 return ( 

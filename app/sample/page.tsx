@@ -8,7 +8,9 @@ const HomePage: React.FC = () => {
   return (
     <div>
       <h1>設定テーブル</h1>
-      <TabbedDataManager initialData={initialData} />
+      <div>
+        <TabbedDataManager initialData={initialData}/>
+      </div>
     </div>
   );
 };

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: input-app-prod
+    # Dockerfile を使ってイメージをビルド (CI/CDでビルド済みの場合は image: タグを使う)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner # Dockerfileの最終ステージ(runner)を指定=
+    restart: unless-stopped # コンテナが停止した場合、手動で止めるまで再起動
+    ports:
+      # ホストのポート80番をコンテナの3000番にマッピングする例
+      # 必要に応じて変更してください (例: "3000:3000")
+      - "3001:3000"
+    environment:
+      NODE_ENV: production # 本番モードであることを明示
+      PORT: 3000 # Dockerfile 内のポート指定と合わせる
+      # 他に必要な本番環境用の環境変数を設定
+      # 例: DATABASE_URL: "..."
+      # API_KEY: "..."
+    # 本番環境ではソースコードのボリュームマウントは通常行わない

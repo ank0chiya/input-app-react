@@ -18,6 +18,7 @@ import {
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { ParamType } from '../types'; // パスは適宜調整
+import { console } from 'inspector';
 
 interface ParamEditModalProps {
     open: boolean;
@@ -47,7 +48,7 @@ const ParamEditModal: React.FC<ParamEditModalProps> = ({ open, params: initialPa
     };
 
     const handleAddParam = () => {
-        setCurrentParams([...currentParams, { param: '', paramType: 'string', paramJP: '' }]);
+        console.log('handleAddParam called');
     };
 
     const handleDeleteParam = (index: number) => {
