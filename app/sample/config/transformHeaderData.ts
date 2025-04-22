@@ -54,7 +54,5 @@ export function transformConfigForHeader(config: Column[]): TransformedHeaderCon
         }
         // 'params' 以外の 'nested' 型カラムはここでは考慮しない (必要なら別途処理を追加)
     });
-    // 最後にアクション用のカラムを追加
-    transformed.push({ id: 'actions', label: 'アクション', type: 'actions', isGroupedHeader: false })
     return transformed;
 }

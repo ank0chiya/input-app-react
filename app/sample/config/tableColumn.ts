@@ -18,6 +18,8 @@ export const firstTabTableColumns: Column[]  = [
             { id: 'security', label: 'セキュリティ', type: 'checkbox' },
         ]
     },
+    { id: 'paramActions', label: 'パラメータ操作', type: 'actions' },
+    { id: 'actions', label: '行操作', type: 'actions' }
 ];
 
 // 2つ目のタブ (詳細情報) のテーブルカラム定義
@@ -33,5 +35,3 @@ export const secondTabTableColumns: Column[] = [
     { id: 'pattern2', label: 'パターン2', type: 'nested' }, // subColumns は DetailTable で使用
     { id: 'online', label: 'オンライン', type: 'checkbox' },
 ];
-
-

@@ -23,6 +23,13 @@ export interface Pattern2Type {
   pattern2Increment: number;
 }
 
+export interface PatternDataType {
+  cfgType: string;
+  param: string;
+  itemType: 'pattern1' | 'pattern2';
+  data: Pattern1Type[] | Pattern2Type[];
+}
+
 export interface TableRowType {
   prefix: string;
   type: string;
@@ -32,13 +39,13 @@ export interface TableRowType {
   // public: boolean;   // ← params に移動したため削除
   // security: boolean; // ← params に移動したため削除
   itemType: 'pattern1' | 'pattern2';
-  pattern1: Pattern1Type[]; // 要素は1つ想定
-  pattern2: Pattern2Type[]; // 要素は1つ想定
+  pattern1?: Pattern1Type[]; // オプショナルに変更
+  pattern2?: Pattern2Type[]; // オプショナルに変更
   online: boolean;
 }
 
 export interface SubColumn {
-  id: keyof ParamType;
+  id: keyof ParamType | 'delete'; // 'delete'を追加
   label: string;
   type: 'text' | 'checkbox';
 }
