@@ -19,7 +19,7 @@ interface DataTableBodyProps {
     field: keyof ParamType,
     value: string | boolean | number
   ) => void;
-  onAddParam: (rowIndex: number) => void;
+  onAddParam: (rowIndex: number, paramIndex?: number) => void;
   onDeleteParam: (rowIndex: number, paramIndex: number) => void; // パラメータ削除用コールバック
   onMoveParamUp: (rowIndex: number, paramIndex: number) => void; // パラメータ上移動用コールバック
   onMoveParamDown: (rowIndex: number, paramIndex: number) => void; // パラメータ下移動用コールバック

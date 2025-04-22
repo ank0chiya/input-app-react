@@ -7,8 +7,8 @@ export const initialData: TableRowType[] = [
         type: 'タイプA',
         cfgType: '設定1',
         params: [
-            { param: 'param1', paramType: 'string', paramJP: 'パラメータ1', selected: false, public: true, security: false },
-            { param: 'param2', paramType: 'number', paramJP: 'パラメータ2', selected: false, public: false, security: true }
+            { param: 'param1', paramType: 'string', paramJP: 'パラメータ1', selected: true, public: true, security: false },
+            { param: 'param2', paramType: 'number', paramJP: 'パラメータ2', selected: true, public: false, security: true }
         ],
         // selected: false, // 削除
         // public: true,   // 削除
@@ -20,7 +20,7 @@ export const initialData: TableRowType[] = [
         prefix: 'CFG002',
         type: 'タイプB',
         cfgType: '設定2',
-        params: [{ param: 'param3', paramType: 'boolean', paramJP: 'パラメータ3', selected: false, public: false, security: false }],
+        params: [{ param: 'param3', paramType: 'boolean', paramJP: 'パラメータ3', selected: true, public: false, security: false }],
         // selected: false, // 削除
         // public: false,  // 削除
         // security: true, // 削除

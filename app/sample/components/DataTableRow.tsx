@@ -12,7 +12,9 @@ import {
     Stack,
     Tooltip,
     Checkbox,
+    Grid,
 } from '@mui/material';
+
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'; // パラメータ追加アイコン
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'; // 行追加アイコン
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'; // 行削除アイコン
@@ -38,7 +40,7 @@ export interface DataTableRowProps {
         field: keyof ParamType,
         value: string | boolean | number
     ) => void;
-    onAddParam: (rowIndex: number) => void;
+    onAddParam: (rowIndex: number, paramIndex?: number) => void;
     onDeleteParam: (rowIndex: number, paramIndex: number) => void; // パラメータ削除用コールバック
     onMoveParamUp: (rowIndex: number, paramIndex: number) => void; // パラメータ上移動用コールバック
     onMoveParamDown: (rowIndex: number, paramIndex: number) => void; // パラメータ下移動用コールバック
@@ -112,7 +114,7 @@ const DataTableRow = memo(
                     {/* パラメータ操作列 */}
                     <TableCell rowSpan={1} align="center">
                         <Tooltip title="パラメータを追加">
-                            <IconButton onClick={() => onAddParam(rowIndex)} size="small" color="success">
+                            <IconButton onClick={() => onAddParam(rowIndex, -1)} size="small" color="success">
                                 <AddCircleOutlineIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
@@ -253,14 +255,7 @@ const DataTableRow = memo(
                         </TableCell>
                         {/* パラメータ操作列 */}
                         <TableCell align="center">
-                            <Stack direction="column" spacing={0.5} alignItems="center">
-                                {paramIndex === 0 && (
-                                    <Tooltip title="パラメータを追加">
-                                        <IconButton onClick={() => onAddParam(rowIndex)} size="small" color="success">
-                                            <AddCircleOutlineIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
-                                )}
+                            <Stack direction="row" spacing={0.5} alignItems="center">
                                 <Tooltip title="パラメータを上に移動">
                                     <span>
                                         <IconButton
@@ -284,6 +279,15 @@ const DataTableRow = memo(
                                             <ArrowDownwardIcon fontSize="small" />
                                         </IconButton>
                                     </span>
+                                </Tooltip>
+                                <Tooltip title="パラメータを追加">
+                                    <IconButton
+                                        onClick={() => onAddParam(rowIndex, paramIndex)}
+                                        size="small"
+                                        color="success"
+                                    >
+                                        <AddCircleOutlineIcon fontSize="small" />
+                                    </IconButton>
                                 </Tooltip>
                                 <Tooltip title="パラメータを削除">
                                     <span>

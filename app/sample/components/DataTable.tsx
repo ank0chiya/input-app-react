@@ -24,20 +24,6 @@ const DataTable = ({
   onDeleteRow,
 }: DataTableProps): JSX.Element => {
   // 使用するカラム定義 (アクション列は別途追加)
-  const columns: Column[] = firstTabTableColumns;
-  // アクション列を追加したカラムリスト
-  const columnsWithActions: Column[] = [
-    ...columns,
-    { id: "paramActions", label: "パラメータ操作", type: "actions" },
-    { id: "actions", label: "行操作", type: "actions" },
-  ];
-  // パラメータ情報のカラムIDリスト (TableCell生成用)
-  const paramColumnIds: (
-    | keyof ParamType
-    | "selected"
-    | "public"
-    | "security"
-  )[] = ["param", "paramType", "paramJP", "selected", "public", "security"];
 
   // --- データ変更関連のコールバック関数 ---
 
@@ -85,11 +71,12 @@ const DataTable = ({
     [tableData, handleRowUpdate]
   );
 
-  // パラメータを現在の行に追加するハンドラ (アクション列のボタンから使用)
+  // パラメータを指定位置の後に追加するハンドラ
   const handleAddParam = useCallback(
-    (rowIndex: number) => {
+    (rowIndex: number, paramIndex?: number) => {
       const targetRow = tableData[rowIndex];
       if (!targetRow) return;
+      
       const newParam: ParamType = {
         param: "",
         paramType: "string",
@@ -98,9 +85,23 @@ const DataTable = ({
         public: false,
         security: false,
       };
+
+      let updatedParams;
+      if (paramIndex === undefined || paramIndex === -1) {
+        // パラメータがない場合は最初のパラメータとして追加
+        updatedParams = [newParam];
+      } else {
+        // 指定されたパラメータの後に新しいパラメータを挿入
+        updatedParams = [
+          ...targetRow.params.slice(0, paramIndex + 1),
+          newParam,
+          ...targetRow.params.slice(paramIndex + 1)
+        ];
+      }
+
       const updatedRow = {
         ...targetRow,
-        params: [...targetRow.params, newParam],
+        params: updatedParams,
       };
       handleRowUpdate(updatedRow, rowIndex);
     },

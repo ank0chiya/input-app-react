@@ -1,6 +1,6 @@
 // components/DetailTable.tsx
 'use client';
-import React, { useMemo, useCallback, JSX, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, JSX, useState, useEffect, Fragment} from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from '@mui/material';
 import { TableRowType, ParamType, Pattern1Type, Pattern2Type, PatternDataType } from '../types';
 import { patternData } from '../data/initialData';
@@ -330,7 +330,7 @@ const DetailTable = ({
                         const rowSpanCount = patterns.length;
 
                         return (
-                            <>
+                            <Fragment key={`${paramInfo.originalRowIndex}-${paramInfo.originalParamIndex}`}>
                                 {patterns.map((pattern, patternIndex) => {
                                     // Pattern1 または Pattern2 のデータとして扱う
                                     const pattern1Data = isPattern1
@@ -440,7 +440,7 @@ const DetailTable = ({
                                         </TableRow>
                                     );
                                 })}
-                            </>
+                            </Fragment>
                         );
                     })}
                 </TableBody>
