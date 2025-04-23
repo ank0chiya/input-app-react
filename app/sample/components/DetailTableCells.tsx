@@ -10,6 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { Pattern1Type, Pattern2Type, TableRowType, ParamType } from '../types';
+import { usePattern } from '../contexts/PatternContext';
 
 // 読み取り専用セル
 interface ReadOnlyCellProps {
@@ -30,9 +31,10 @@ interface EditableCellProps {
     value: string;
     onChange: (value: string) => void;
     rowSpan?: number;
+    disabled?: boolean;
 }
 
-export const EditableCell: React.FC<EditableCellProps> = ({ value, onChange, rowSpan }) => (
+export const EditableCell: React.FC<EditableCellProps> = ({ value, onChange, rowSpan, disabled }) => (
     <TableCell rowSpan={rowSpan}>
         <TextField 
             variant="standard" 
@@ -40,7 +42,8 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onChange, row
             fullWidth 
             value={value} 
             onChange={(e) => onChange(e.target.value)} 
-            InputProps={{ sx: { fontSize: '0.875rem' } }} 
+            InputProps={{ sx: { fontSize: '0.875rem' } }}
+            disabled={disabled}
         />
     </TableCell>
 );
@@ -49,9 +52,10 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onChange, row
 interface NumberInputCellProps {
     value: number;
     onChange: (value: number) => void;
+    disabled?: boolean;
 }
 
-export const NumberInputCell: React.FC<NumberInputCellProps> = ({ value, onChange }) => (
+export const NumberInputCell: React.FC<NumberInputCellProps> = ({ value, onChange, disabled }) => (
     <TableCell>
         <TextField 
             type="number" 
@@ -60,7 +64,8 @@ export const NumberInputCell: React.FC<NumberInputCellProps> = ({ value, onChang
             fullWidth 
             value={value} 
             onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)} 
-            InputProps={{ sx: { fontSize: '0.875rem' } }} 
+            InputProps={{ sx: { fontSize: '0.875rem' } }}
+            disabled={disabled}
         />
     </TableCell>
 );
@@ -97,8 +102,8 @@ export const ItemTypeSelectCell: React.FC<ItemTypeSelectCellProps> = ({ value, o
                 onChange={(e) => onChange(e.target.value as 'pattern1' | 'pattern2')} 
                 sx={{ fontSize: '0.875rem' }}
             >
-                <MenuItem value="pattern1">pattern1</MenuItem>
-                <MenuItem value="pattern2">pattern2</MenuItem>
+                <MenuItem value="pattern1">パターン値</MenuItem>
+                <MenuItem value="pattern2">数値範囲</MenuItem>
             </Select>
         </FormControl>
     </TableCell>
@@ -106,77 +111,86 @@ export const ItemTypeSelectCell: React.FC<ItemTypeSelectCellProps> = ({ value, o
 
 // パターン操作ボタン
 interface PatternActionButtonsProps {
-    onMoveUp: () => void;
-    onMoveDown: () => void;
-    onDelete: () => void;
-    onAdd?: () => void;
+    cfgType: string;
+    param: string;
+    itemType: 'pattern1' | 'pattern2';
+    patternIndex: number;
     isFirst: boolean;
     isLast: boolean;
     canDelete: boolean;
 }
 
 export const PatternActionButtons: React.FC<PatternActionButtonsProps> = ({
-    onMoveUp, onMoveDown, onDelete, onAdd, isFirst, isLast, canDelete
-}) => (
-    <TableCell align="center">
-        <Stack direction="row" spacing={0.5} justifyContent="center">
-            {/* 上へ移動ボタン */}
-            <Tooltip title="上へ移動">
-                <span>
-                    <IconButton 
-                        size="small" 
-                        color="primary" 
-                        disabled={isFirst} 
-                        onClick={onMoveUp}
-                    >
-                        <ArrowUpwardIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-            
-            {/* 下へ移動ボタン */}
-            <Tooltip title="下へ移動">
-                <span>
-                    <IconButton 
-                        size="small" 
-                        color="primary" 
-                        disabled={isLast} 
-                        onClick={onMoveDown}
-                    >
-                        <ArrowDownwardIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-            
-            {/* 削除ボタン */}
-            <Tooltip title="削除">
-                <span>
-                    <IconButton 
-                        size="small" 
-                        color="error" 
-                        disabled={!canDelete} 
-                        onClick={onDelete}
-                    >
-                        <DeleteIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-            
-            {/* 追加ボタン（最後のパターン行でのみ表示） */}
-            {isLast && onAdd && (
-                <Tooltip title="追加">
-                    <IconButton 
-                        size="small" 
-                        color="success" 
-                        onClick={onAdd}
-                    >
-                        <AddIcon fontSize="small" />
-                    </IconButton>
+    cfgType, param, itemType, patternIndex, isFirst, isLast, canDelete
+}) => {
+    const { 
+        movePatternUpAction, 
+        movePatternDownAction, 
+        deletePatternAction, 
+        addPatternAction 
+    } = usePattern();
+
+    return (
+        <TableCell align="center">
+            <Stack direction="row" spacing={0.5} justifyContent="center">
+                {/* 上へ移動ボタン */}
+                <Tooltip title="上へ移動">
+                    <span>
+                        <IconButton 
+                            size="small" 
+                            color="primary" 
+                            disabled={isFirst} 
+                            onClick={() => movePatternUpAction(cfgType, param, itemType, patternIndex)}
+                        >
+                            <ArrowUpwardIcon fontSize="small" />
+                        </IconButton>
+                    </span>
                 </Tooltip>
-            )}
-        </Stack>
-    </TableCell>
-);
+                
+                {/* 下へ移動ボタン */}
+                <Tooltip title="下へ移動">
+                    <span>
+                        <IconButton 
+                            size="small" 
+                            color="primary" 
+                            disabled={isLast} 
+                            onClick={() => movePatternDownAction(cfgType, param, itemType, patternIndex)}
+                        >
+                            <ArrowDownwardIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+                
+                {/* 削除ボタン */}
+                <Tooltip title="削除">
+                    <span>
+                        <IconButton 
+                            size="small" 
+                            color="error" 
+                            disabled={!canDelete} 
+                            onClick={() => deletePatternAction(cfgType, param, itemType, patternIndex)}
+                        >
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+                
+                {/* 追加ボタン（最後のパターン行でのみ表示） */}
+                {isLast && (
+                    <Tooltip title="追加">
+                        <IconButton 
+                            size="small" 
+                            color="success" 
+                            onClick={() => addPatternAction(cfgType, param, itemType)}
+                        >
+                            <AddIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                )}
+            </Stack>
+        </TableCell>
+    );
+};
 
 // 親情報セル群
 interface ParentInfoCellsProps {
@@ -195,7 +209,7 @@ interface ParentInfoCellsProps {
     ) => void;
     onParentFieldChange: (
         filteredParamIndex: number, 
-        field: keyof Pick<TableRowType, 'itemType' | 'online'>, 
+        field: keyof Pick<TableRowType, 'online'>, 
         value: any
     ) => void;
 }
@@ -218,77 +232,68 @@ export const ParentInfoCells: React.FC<ParentInfoCellsProps> = ({
             rowSpan={rowSpanCount} 
         />
         <ItemTypeSelectCell 
-            value={parentRow.itemType} 
-            onChange={(value) => onParentFieldChange(filteredIndex, 'itemType', value)} 
+            value={paramInfo.itemType} 
+            onChange={(value) => onParamFieldChange(filteredIndex, 'itemType', value)} 
             rowSpan={rowSpanCount} 
         />
     </>
 );
 
-// Pattern1 行のフィールド
-interface Pattern1FieldsProps {
-    pattern: Pattern1Type;
+// パターンフィールド
+interface PatternFieldsProps {
+    pattern1Data: Pattern1Type;
+    pattern2Data: Pattern2Type;
     cfgType: string;
     param: string;
     patternIndex: number;
-    onChange: (
-        cfgType: string,
-        param: string,
-        patternIndex: number,
-        field: keyof Pattern1Type,
-        value: string
-    ) => void;
+    itemType: 'pattern1' | 'pattern2';
 }
 
-export const Pattern1Fields: React.FC<Pattern1FieldsProps> = ({
-    pattern, cfgType, param, patternIndex, onChange
-}) => (
+export const PatternFields: React.FC<PatternFieldsProps> = ({
+    pattern1Data,
+    pattern2Data,
+    cfgType,
+    param,
+    patternIndex,
+    itemType,
+}) => {
+    const { updatePattern1Action, updatePattern2Action } = usePattern();
+    
+    return (
     <>
+        {/* パターン1のフィールド */}
         <EditableCell 
-            value={pattern.pattern1Value} 
-            onChange={(value) => onChange(cfgType, param, patternIndex, 'pattern1Value', value)} 
+            value={pattern1Data.pattern1Value}
+            onChange={(value) => updatePattern1Action(cfgType, param, patternIndex, 'pattern1Value', value)}
+            disabled={itemType === 'pattern2'}
         />
         <EditableCell 
-            value={pattern.pattern1JP} 
-            onChange={(value) => onChange(cfgType, param, patternIndex, 'pattern1JP', value)} 
+            value={pattern1Data.pattern1JP}
+            onChange={(value) => updatePattern1Action(cfgType, param, patternIndex, 'pattern1JP', value)}
+            disabled={itemType === 'pattern2'}
         />
         <EditableCell 
-            value={pattern.pattern1Desc} 
-            onChange={(value) => onChange(cfgType, param, patternIndex, 'pattern1Desc', value)} 
+            value={pattern1Data.pattern1Desc}
+            onChange={(value) => updatePattern1Action(cfgType, param, patternIndex, 'pattern1Desc', value)}
+            disabled={itemType === 'pattern2'}
+        />
+
+        {/* パターン2のフィールド */}
+        <NumberInputCell 
+            value={pattern2Data.pattern2Min}
+            onChange={(value) => updatePattern2Action(cfgType, param, patternIndex, 'pattern2Min', value)}
+            disabled={itemType === 'pattern1'}
+        />
+        <NumberInputCell 
+            value={pattern2Data.pattern2Max}
+            onChange={(value) => updatePattern2Action(cfgType, param, patternIndex, 'pattern2Max', value)}
+            disabled={itemType === 'pattern1'}
+        />
+        <NumberInputCell 
+            value={pattern2Data.pattern2Increment}
+            onChange={(value) => updatePattern2Action(cfgType, param, patternIndex, 'pattern2Increment', value)}
+            disabled={itemType === 'pattern1'}
         />
     </>
-);
-
-// Pattern2 行のフィールド
-interface Pattern2FieldsProps {
-    pattern: Pattern2Type;
-    cfgType: string;
-    param: string;
-    patternIndex: number;
-    onChange: (
-        cfgType: string,
-        param: string,
-        patternIndex: number,
-        field: keyof Pattern2Type,
-        value: number
-    ) => void;
-}
-
-export const Pattern2Fields: React.FC<Pattern2FieldsProps> = ({
-    pattern, cfgType, param, patternIndex, onChange
-}) => (
-    <>
-        <NumberInputCell 
-            value={pattern.pattern2Min} 
-            onChange={(value) => onChange(cfgType, param, patternIndex, 'pattern2Min', value)} 
-        />
-        <NumberInputCell 
-            value={pattern.pattern2Max} 
-            onChange={(value) => onChange(cfgType, param, patternIndex, 'pattern2Max', value)} 
-        />
-        <NumberInputCell 
-            value={pattern.pattern2Increment} 
-            onChange={(value) => onChange(cfgType, param, patternIndex, 'pattern2Increment', value)} 
-        />
-    </>
-);
+    );
+};

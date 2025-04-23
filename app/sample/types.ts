@@ -9,6 +9,7 @@ export interface ParamType {
   selected: boolean; // パラメータ選択用
   public: boolean;   // パラメータごとの公開フラグ
   security: boolean; // パラメータごとのセキュリティフラグ
+  itemType: 'pattern1' | 'pattern2'; // パラメータごとのパターンタイプ
 }
 
 export interface Pattern1Type {
@@ -38,7 +39,6 @@ export interface TableRowType {
   // selected: boolean; // ← 行選択用は削除 (パラメータ選択に移行)
   // public: boolean;   // ← params に移動したため削除
   // security: boolean; // ← params に移動したため削除
-  itemType: 'pattern1' | 'pattern2';
   pattern1?: Pattern1Type[]; // オプショナルに変更
   pattern2?: Pattern2Type[]; // オプショナルに変更
   online: boolean;
