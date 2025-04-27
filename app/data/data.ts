@@ -1,0 +1,156 @@
+import { Product, Params } from '../types'; 
+
+export const sample_products: Product[] = [
+    {
+        productId: 0,
+        prefix: 'abc',
+        type: 'abc00',
+        cfgType: 'abcdef',
+        attributes: [
+            {
+                attributeId: 0,
+                attribute: 'attr1',
+                attributeType: 'string',
+                attributeJP: '属性1',
+                attributeUnit: '',
+                paramHas: true,
+                contract: 'contract1',
+                public: true,
+                masking: false,
+                online: true,
+                sortOrder: 0,
+            },
+            {
+                attributeId: 1,
+                attribute: 'attr2',
+                attributeType: 'string',
+                attributeJP: '属性2',
+                attributeUnit: '',
+                paramHas: true,
+                contract: 'contract2',
+                public: false,
+                masking: true,
+                online: false,
+                sortOrder: 1,
+            },
+            {
+                attributeId: 2,
+                attribute: 'attr2',
+                attributeType: 'string',
+                attributeJP: '属性2',
+                attributeUnit: '',
+                paramHas: true,
+                contract: '',
+                public: false,
+                masking: true,
+                online: false,
+                sortOrder: 1,
+            },
+        ],
+        sortOrder: 0,
+    },
+    {
+        productId: 1,
+        prefix: 'def',
+        type: 'def00',
+        cfgType: 'abcdef',
+        attributes: [
+            {
+                attributeId: 0,
+                attribute: 'attr1',
+                attributeType: 'string',
+                attributeJP: '属性1',
+                attributeUnit: '',
+                paramHas: true,
+                contract: 'contract1',
+                public: true,
+                masking: false,
+                online: true,
+                sortOrder: 0,
+            },
+            {
+                attributeId: 1,
+                attribute: 'attr2',
+                attributeType: 'string',
+                attributeJP: '属性2',
+                attributeUnit: '',
+                paramHas: false,
+                contract: 'contract2',
+                public: false,
+                masking: true,
+                online: false,
+                sortOrder: 1,
+            },
+        ],
+        sortOrder: 1,
+    },
+];
+
+export const sample_params: Params[] = [
+    {
+        productId: 0,
+        attributeId: 0,
+        param: [
+            {
+                paramId: 0,
+                code: 'code1',
+                dispName: 'コード1',
+                sortOrder: 0,
+                type: 'type1',
+            },
+            {
+                paramId: 1,
+                code: 'code2',
+                dispName: 'コード2',
+                sortOrder: 1,
+                type: 'type1',
+            },
+        ],
+    },
+    {
+        productId: 0,
+        attributeId: 1,
+        param: [
+            {
+                paramId: 0,
+                min: 1,
+                increment: 2,
+                sortOrder: 0,
+                type: 'type2',
+            },
+        ],
+    },
+    {
+        productId: 0,
+        attributeId: 2,
+        param: [
+            {
+                paramId: 1,
+                code: 'code',
+                dispName: 'コード',
+                sortOrder: 0,
+                type: 'type3',
+            },
+        ],
+    },
+    {
+        productId: 1,
+        attributeId: 0,
+        param: [
+            {
+                paramId: 0,
+                code: 'code1',
+                dispName: 'コード1',
+                sortOrder: 0,
+                type: 'type1',
+            },
+            {
+                paramId: 1,
+                code: 'code2',
+                dispName: 'コード2',
+                sortOrder: 1,
+                type: 'type1',
+            },
+        ],
+    },
+];

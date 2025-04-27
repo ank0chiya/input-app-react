@@ -1,0 +1,77 @@
+'use client';
+import React, { useCallback, useState } from 'react';
+import { Product, BaseTableRow } from '../types';
+import { Table, TableContainer, Paper } from '@mui/material';
+import BaseTableHeader from './BaseTable/Header';
+import BaseTableBody from './BaseTable/Body';
+import { BaseTableProvider } from './BaseTable/contexts/BaseTableContext';
+import { sample_products, sample_params } from '../data/data'; // サンプルデータをインポート
+
+// 新しい行のデフォルトデータを作成する関数
+const createNewRowData = (productId: number, sortOrder: number): Product => {
+    // ランダムなアルファベット3文字を生成
+    const randomAlpha = Math.random().toString(36).substring(2, 5).toUpperCase();
+    return {
+        productId: productId,
+        prefix: randomAlpha,
+        type: '',
+        cfgType: '',
+        attributes: [], // 最初はパラメータなし
+        sortOrder: sortOrder,
+    };
+};
+
+export default function BaseTable() {
+    const [tableData, setTableData] = useState<Product[]>(sample_products);
+
+    // 子コンポーネント から行データの変更通知を受け取るコールバック
+    const handleDataUpdate = useCallback((updatedRow: Product, rowIndex: number) => {
+        setTableData((prevData) => {
+            return prevData.map((row, index) => (index === rowIndex ? updatedRow : row));
+        });
+    }, []);
+
+    // DataTable から行追加通知を受け取るコールバック
+    const handleAddRowCallback = useCallback((rowIndex: number) => {
+        // const newRow = createNewRowData();
+        setTableData((prevData) => {
+            const maxId = Math.max(...prevData.map((row) => row.productId), 0);
+
+            const newRow = createNewRowData(maxId + 1, rowIndex);
+
+            const newData = [
+                ...prevData.slice(0, rowIndex + 1), // クリックされた行の直後に追加
+                newRow,
+                ...prevData.slice(rowIndex + 1),
+            ];
+            return newData;
+        });
+    }, []);
+
+    const handleDeleteRowCallback = useCallback((rowIndex: number) => {
+        setTableData((prevData) => {
+            if (prevData.length <= 1) {
+                return prevData;
+            }
+            return prevData.filter((_, index) => index !== rowIndex);
+        });
+    }, []);
+
+    return (
+        <>
+            <TableContainer component={Paper}>
+                <Table sx={{ minWidth: 900 }} aria-label="data table with parameters expanded">
+                    <BaseTableHeader />
+                    <BaseTableProvider
+                        baseTableData={tableData}
+                        onDataChange={handleDataUpdate} // 行データ変更時のコールバック
+                        onAddRow={handleAddRowCallback} // 行追加時のコールバック
+                        onDeleteRow={handleDeleteRowCallback} // 行削除時のコールバック>
+                    >
+                        <BaseTableBody tableData={tableData} />
+                    </BaseTableProvider>
+                </Table>
+            </TableContainer>
+        </>
+    );
+}
