@@ -18,7 +18,6 @@ const topRowConfig: HeaderConfig[] = [
     { key: 'contract', label: 'contract', rowSpan: 2 },
     { key: 'public', label: 'Public', rowSpan: 2 },
     { key: 'masking', label: 'Masking', rowSpan: 2 },
-    { key: 'online', label: 'Online', rowSpan: 2 },
     { key: 'attributeAction', label: '属性操作', rowSpan: 2 },
     { key: 'productAction', label: '行操作', rowSpan: 2 },
 ];

@@ -5,7 +5,7 @@ import { Product, Params } from '../types';
 import { sample_products, sample_params } from '../data/data'; // サンプルデータをインポート
 
 import BaseTable from './BaseTable';
-import DetailTable from './DetailTable';
+// import DetailTable from './DetailTable';
 
 interface TabPanelProps {
     children?: React.ReactNode;

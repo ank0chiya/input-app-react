@@ -19,8 +19,68 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'; // 上移動ア�
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'; // 下移動アイコン
 import { Product, BaseTableTopRow } from '@/app/types';
 import { usePattern } from './contexts/BaseTableContext';
+import { Attribute } from '@/app/types';
+import { Paragliding } from '@mui/icons-material';
 
-export function TextFieldCell({ rowSpan, value }: { rowSpan: number; value: string }) {
+export function TextFieldCell({
+    rowSpan,
+    value,
+    columnId,
+    rowIndex,
+    attributeIndex,
+}: {
+    rowSpan: number;
+    value: string;
+    columnId: string;
+    rowIndex: number;
+    attributeIndex?: number;
+}) {
+    const { handleProductCellChange, handleAttributeCellChange } = usePattern();
+    const productCells = ['prefix', 'type', 'cfgType'];
+    const isProductCell = productCells.includes(columnId as keyof Product);
+
+    const handleChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            if (isProductCell) {
+                handleProductCellChange(
+                    rowIndex,
+                    columnId as 'prefix' | 'type' | 'cfgType',
+                    event.target.value,
+                );
+            } else {
+                if (attributeIndex !== undefined) {
+                    console.log(columnId);
+                    handleAttributeCellChange(
+                        rowIndex,
+                        attributeIndex,
+                        columnId as keyof Pick<
+                            Attribute,
+                            | 'attribute'
+                            | 'attributeJP'
+                            | 'attributeType'
+                            | 'attributeUnit'
+                            | 'paramHas'
+                            | 'contract'
+                            | 'masking'
+                            | 'public'
+                        >,
+                        event?.target.value,
+                    );
+                } else {
+                    console.warn(`Attribute index is undefined`);
+                }
+            }
+        },
+        [
+            isProductCell,
+            rowIndex,
+            attributeIndex,
+            columnId,
+            handleProductCellChange,
+            handleAttributeCellChange,
+        ],
+    );
+
     return (
         <TableCell rowSpan={rowSpan}>
             <TextField
@@ -28,6 +88,7 @@ export function TextFieldCell({ rowSpan, value }: { rowSpan: number; value: stri
                 size="small"
                 fullWidth
                 value={value}
+                onChange={handleChange}
                 placeholder="Enter text"
                 sx={{ fontSize: '0.875rem' }}
             />
@@ -35,7 +96,20 @@ export function TextFieldCell({ rowSpan, value }: { rowSpan: number; value: stri
     );
 }
 
-export function AttributeTypeFieldCell({ rowSpan, value }: { rowSpan: number; value: string }) {
+export function AttributeTypeFieldCell({
+    rowSpan,
+    value,
+    columnId,
+    rowIndex,
+    attributeIndex,
+}: {
+    rowSpan: number;
+    value: string;
+    columnId: string;
+    rowIndex: number;
+    attributeIndex: number;
+}) {
+    const { handleAttributeCellChange } = usePattern();
     const types = ['string', 'number', 'boolean'];
     const SelectItems = types.map((type) => (
         <MenuItem key={type} value={type}>
@@ -45,7 +119,18 @@ export function AttributeTypeFieldCell({ rowSpan, value }: { rowSpan: number; va
     return (
         <TableCell rowSpan={rowSpan}>
             <FormControl variant="standard" size="small" fullWidth>
-                <Select value={value} sx={{ fontSize: '0.875rem' }}>
+                <Select
+                    value={value}
+                    sx={{ fontSize: '0.875rem' }}
+                    onChange={(e) =>
+                        handleAttributeCellChange(
+                            rowIndex,
+                            attributeIndex,
+                            columnId as keyof Pick<Attribute, 'attributeType'>,
+                            e.target.value,
+                        )
+                    }
+                >
                     {SelectItems}
                 </Select>
             </FormControl>
@@ -53,56 +138,39 @@ export function AttributeTypeFieldCell({ rowSpan, value }: { rowSpan: number; va
     );
 }
 
-export function CheckboxCell({ rowSpan, value }: { rowSpan: number; value: boolean }) {
+export function CheckboxCell({
+    rowSpan,
+    value,
+    columnId,
+    rowIndex,
+    attributeIndex,
+}: {
+    rowSpan: number;
+    value: boolean;
+    columnId: keyof Pick<Attribute, 'paramHas' | 'public' | 'masking' >;
+    rowIndex: number;
+    attributeIndex: number;
+}) {
+    const { handleAttributeCellChange } = usePattern();
     return (
         <TableCell rowSpan={rowSpan} align="center">
-            <Checkbox size="small" checked={value} />
+            <Checkbox
+                size="small"
+                checked={value}
+                onChange={(e) =>
+                    handleAttributeCellChange(
+                        rowIndex,
+                        attributeIndex,
+                        columnId as keyof Pick<Attribute, 'paramHas' | 'public' | 'masking' >,
+                        e.target.checked,
+                    )
+                }
+            />
         </TableCell>
     );
 }
 
-export function EmptyActionFieldCell() {
-    return (
-        <>
-            <TableCell rowSpan={1} align="center">
-                <Tooltip title="パラメータを追加">
-                    <IconButton
-                        onClick={() => {
-                            console.log('Add parameter');
-                        }}
-                    >
-                        <AddCircleOutlineIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-            </TableCell>
-            <TableCell rowSpan={1} align="center">
-                <Stack direction="column" spacing={0.5} alignItems="center">
-                    <Tooltip title="この下に行を追加">
-                        <IconButton
-                            onClick={() => console.log('この下に行を追加')}
-                            size="small"
-                            color="primary"
-                        >
-                            <PlaylistAddIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="この行を削除">
-                        <IconButton
-                            onClick={() => console.log('この行を削除')}
-                            size="small"
-                            color="error"
-                            // disabled={tableDataLength <= 1}
-                        >
-                            <DeleteForeverIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                </Stack>
-            </TableCell>
-        </>
-    );
-}
-
-export function AddRowTooltip({ rowIndex }: { rowIndex: number; }) {
+export function AddRowTooltip({ rowIndex }: { rowIndex: number }) {
     const { handleAddRow } = usePattern();
     return (
         <Tooltip title="この下に行を追加">
@@ -113,7 +181,13 @@ export function AddRowTooltip({ rowIndex }: { rowIndex: number; }) {
     );
 }
 
-export function DeleteRowTooltip({ rowIndex, tableDataLength }: { rowIndex: number; tableDataLength: number; }) {
+export function DeleteRowTooltip({
+    rowIndex,
+    tableDataLength,
+}: {
+    rowIndex: number;
+    tableDataLength: number;
+}) {
     const { handleDeleteRow } = usePattern();
     return (
         <Tooltip title="この行を削除">
@@ -129,19 +203,22 @@ export function DeleteRowTooltip({ rowIndex, tableDataLength }: { rowIndex: numb
     );
 }
 
-export function AddParamTooltip({ rowIndex }: { rowIndex: number; }) {
+export function AddAttributeTooltip({ rowIndex }: { rowIndex: number }) {
     const { handleAddAttribute } = usePattern();
     return (
         <Tooltip title="パラメータを追加">
-            <IconButton onClick={() => handleAddAttribute(rowIndex, -1)} size="small" color="success">
+            <IconButton
+                onClick={() => handleAddAttribute(rowIndex, -1)}
+                size="small"
+                color="success"
+            >
                 <AddCircleOutlineIcon fontSize="small" />
             </IconButton>
         </Tooltip>
     );
 }
 
-
-export function ActionFieldCell({
+export function ActionFieldCells({
     row,
     rowIndex,
     rowSpanCount,
@@ -154,7 +231,15 @@ export function ActionFieldCell({
     attributeIndex: number;
     tableDataLength: number;
 }) {
-    const { tableData, handleTestContext, handleAddRow } = usePattern();
+    const {
+        tableData,
+        handleTestContext,
+        handleAddRow,
+        handleAddAttribute,
+        handleDeleteAttribute,
+        handleMoveAttributeUp,
+        handleMoveAttributeDown,
+    } = usePattern();
 
     return (
         <>
@@ -163,7 +248,7 @@ export function ActionFieldCell({
                     <Tooltip title="パラメータを上に移動">
                         <span>
                             <IconButton
-                                onClick={() => console.log('Move parameter up')}
+                                onClick={() => handleMoveAttributeUp(rowIndex, attributeIndex)}
                                 size="small"
                                 color="primary"
                                 disabled={attributeIndex === 0}
@@ -175,7 +260,7 @@ export function ActionFieldCell({
                     <Tooltip title="パラメータを下に移動">
                         <span>
                             <IconButton
-                                onClick={() => console.log('Move parameter down')}
+                                onClick={() => handleMoveAttributeDown(rowIndex, attributeIndex)}
                                 size="small"
                                 color="primary"
                                 disabled={attributeIndex === row.attributes.length - 1}
@@ -186,7 +271,7 @@ export function ActionFieldCell({
                     </Tooltip>
                     <Tooltip title="パラメータを追加">
                         <IconButton
-                            onClick={() => console.log('Add parameter')}
+                            onClick={() => handleAddAttribute(rowIndex, attributeIndex)}
                             size="small"
                             color="success"
                         >
@@ -196,7 +281,7 @@ export function ActionFieldCell({
                     <Tooltip title="パラメータを削除">
                         <span>
                             <IconButton
-                                onClick={() => console.log('Delete parameter')}
+                                onClick={() => handleDeleteAttribute(rowIndex, attributeIndex)}
                                 size="small"
                                 color="error"
                                 disabled={row.attributes.length <= 1}

@@ -1,9 +1,10 @@
 'use client';
 import React, { useCallback, useState } from 'react';
-import { Product, BaseTableRow } from '../types';
+import { Product } from '../types';
 import { Table, TableContainer, Paper } from '@mui/material';
 import BaseTableHeader from './BaseTable/Header';
 import BaseTableBody from './BaseTable/Body';
+import BaseTableManager from './BaseTable/Manager';
 import { BaseTableProvider } from './BaseTable/contexts/BaseTableContext';
 import { sample_products, sample_params } from '../data/data'; // サンプルデータをインポート
 
@@ -24,6 +25,7 @@ const createNewRowData = (productId: number, sortOrder: number): Product => {
 export default function BaseTable() {
     const [tableData, setTableData] = useState<Product[]>(sample_products);
 
+    const [isRegistering, setIsRegistering] = useState(false);
     // 子コンポーネント から行データの変更通知を受け取るコールバック
     const handleDataUpdate = useCallback((updatedRow: Product, rowIndex: number) => {
         setTableData((prevData) => {
@@ -59,6 +61,7 @@ export default function BaseTable() {
 
     return (
         <>
+            <BaseTableManager tableData={tableData} />
             <TableContainer component={Paper}>
                 <Table sx={{ minWidth: 900 }} aria-label="data table with parameters expanded">
                     <BaseTableHeader />

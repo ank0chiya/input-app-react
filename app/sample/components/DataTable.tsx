@@ -84,6 +84,7 @@ const DataTable = ({
         selected: false,
         public: false,
         security: false,
+        itemType: 'pattern1'// build用に定義
       };
 
       let updatedParams;

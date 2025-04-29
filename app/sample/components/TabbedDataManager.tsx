@@ -54,7 +54,7 @@ const createNewRowData = (): TableRowType => {
         type: '',
         cfgType: '',
         params: [], // 最初はパラメータなし
-        itemType: 'pattern1', // デフォルト値
+        // itemType: 'pattern1', // デフォルト値
         pattern1: [],
         pattern2: [],
         online: false,
@@ -217,10 +217,11 @@ const TabbedDataManager = ({ initialData }: TabbedDataManagerProps): JSX.Element
             <TabPanel value={activeTab} index={1}>
                 {/* DetailTable に現在のテーブルデータと更新用コールバックを渡す */}
                 {/* DetailTable 側で tableData から param.selected === true のものをフィルタリングして表示する */}
-                <DetailTable
+                {/* build用にコメントアウト */}
+                {/* <DetailTable
                     tableData={tableData}
                     onDataChange={handleDataUpdate}
-                />
+                /> */}
             </TabPanel>
         </Box>
     );

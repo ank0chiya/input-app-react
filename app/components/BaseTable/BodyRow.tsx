@@ -5,13 +5,12 @@ import {
     TextFieldCell,
     AttributeTypeFieldCell,
     CheckboxCell,
-    ActionFieldCell,
+    ActionFieldCells,
     AddRowTooltip,
     DeleteRowTooltip,
-    AddParamTooltip,
+    AddAttributeTooltip,
 } from './BodyCells';
 import React from 'react';
-import { Check } from '@mui/icons-material';
 
 function EmptyAttribute(row: Product, rowIndex: number, tableDataLength: number) {
     // 新規プロダクト行を追加した場合など、属性が空の場合の処理
@@ -26,18 +25,18 @@ function EmptyAttribute(row: Product, rowIndex: number, tableDataLength: number)
                 },
             }}
         >
-            <TextFieldCell rowSpan={1} value={row.prefix} />
-            <TextFieldCell rowSpan={1} value={row.type} />
-            <TextFieldCell rowSpan={1} value={row.cfgType} />
+            <TextFieldCell rowSpan={1} value={row.prefix} columnId="prefix" rowIndex={rowIndex} />
+            <TextFieldCell rowSpan={1} value={row.type} columnId="prefix" rowIndex={rowIndex} />
+            <TextFieldCell rowSpan={1} value={row.cfgType} columnId="prefix" rowIndex={rowIndex} />
             <TableCell
-                colSpan={9}
+                colSpan={8}
                 align="center"
                 sx={{ color: 'text.disabled', fontSize: '0.8rem' }}
             >
                 パラメータがありません
             </TableCell>
             <TableCell rowSpan={1} align="center">
-                <AddParamTooltip rowIndex={rowIndex}/>
+                <AddAttributeTooltip rowIndex={rowIndex} />
             </TableCell>
             <TableCell>
                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -79,21 +78,83 @@ function AttributeRow({
         >
             {isFirstAttribute && (
                 <>
-                    <TextFieldCell rowSpan={rowSpanCount} value={row.prefix} />
-                    <TextFieldCell rowSpan={rowSpanCount} value={row.type} />
-                    <TextFieldCell rowSpan={rowSpanCount} value={row.cfgType} />
+                    <TextFieldCell
+                        rowSpan={rowSpanCount}
+                        value={row.prefix}
+                        columnId="prefix"
+                        rowIndex={rowIndex}
+                    />
+                    <TextFieldCell
+                        rowSpan={rowSpanCount}
+                        value={row.type}
+                        columnId="type"
+                        rowIndex={rowIndex}
+                    />
+                    <TextFieldCell
+                        rowSpan={rowSpanCount}
+                        value={row.cfgType}
+                        columnId="cfgType"
+                        rowIndex={rowIndex}
+                    />
                 </>
             )}
-            <TextFieldCell rowSpan={1} value={attribute.attribute} />
-            <AttributeTypeFieldCell rowSpan={1} value={attribute.attributeType} />
-            <TextFieldCell rowSpan={1} value={attribute.attributeJP} />
-            <TextFieldCell rowSpan={1} value={attribute.attributeUnit} />
-            <CheckboxCell rowSpan={1} value={attribute.paramHas} />
-            <TextFieldCell rowSpan={1} value={attribute.contract} />
-            <CheckboxCell rowSpan={1} value={attribute.public} />
-            <CheckboxCell rowSpan={1} value={attribute.masking} />
-            <CheckboxCell rowSpan={1} value={attribute.online} />
-            <ActionFieldCell
+            <TextFieldCell
+                rowSpan={1}
+                value={attribute.attribute}
+                columnId="attribute"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <AttributeTypeFieldCell
+                rowSpan={1}
+                value={attribute.attributeType}
+                columnId="attributeType"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <TextFieldCell
+                rowSpan={1}
+                value={attribute.attributeJP}
+                columnId="attributeJP"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <TextFieldCell
+                rowSpan={1}
+                value={attribute.attributeUnit}
+                columnId="attributeUnit"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <CheckboxCell
+                rowSpan={1}
+                value={attribute.paramHas}
+                columnId="paramHas"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <TextFieldCell
+                rowSpan={1}
+                value={attribute.contract}
+                columnId="contract"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <CheckboxCell
+                rowSpan={1}
+                value={attribute.public}
+                columnId="public"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <CheckboxCell
+                rowSpan={1}
+                value={attribute.masking}
+                columnId="masking"
+                rowIndex={rowIndex}
+                attributeIndex={attributeIndex}
+            />
+            <ActionFieldCells
                 row={row}
                 rowIndex={rowIndex}
                 rowSpanCount={rowSpanCount}
@@ -104,13 +165,11 @@ function AttributeRow({
     );
 }
 export default function BaseTableRow({
-    key,
     sx,
     row,
     rowIndex,
     tableDataLength,
 }: {
-    key: any;
     sx: any;
     row: Product;
     rowIndex: number;
