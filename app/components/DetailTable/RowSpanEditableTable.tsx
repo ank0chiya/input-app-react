@@ -1,9 +1,9 @@
 // src/components/RowSpanEditableTable.tsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { Table, TableContainer, Paper } from '@mui/material';
-import TableHeader from './DetailTable/Header';
-import TableBodyComponent from './DetailTable/Body';
-import { sample_products, sample_params } from '../data/data';
+import TableHeader from './Header';
+import TableBodyComponent from './Body';
+import { sample_products, sample_params } from '../../data/data';
 import type {
     Product,
     Attribute,
@@ -220,47 +220,6 @@ const RowSpanEditableTable: React.FC = () => {
         },
         [paramsMap, handleAttributeChange],
     ); // paramsMapとhandleAttributeChangeに依存
-
-    const handleMoveParam = useCallback(
-        (productId: number, attributeId: number, paramId: number, direction: 'up' | 'down') => {
-            setParamsList((prevParamsList) => {
-                const updatedList = prevParamsList.map((pl) => {
-                    if (pl.productId === productId && pl.attributeId === attributeId) {
-                        const currentParams = pl.param;
-                        const targetIndex = currentParams.findIndex((p) => p.paramId === paramId);
-
-                        if (targetIndex === -1) {
-                            console.warn(`paramId ${paramId} not found.`);
-                            return pl; // 見つからなかった場合はそのまま
-                        }
-
-                        let newIndex = direction === 'up' ? targetIndex - 1 : targetIndex + 1;
-
-                        // 範囲外チェック
-                        if (newIndex < 0 || newIndex >= currentParams.length) {
-                            console.warn(`Cannot move param ${direction}. Out of bounds.`);
-                            return pl; // 範囲外の場合はそのまま
-                        }
-
-                        // 要素を移動 (splice を使う方法)
-                        const element = currentParams.splice(targetIndex, 1)[0]; // 移動する要素を削除
-                        currentParams.splice(newIndex, 0, element); // 新しい位置に挿入
-
-                        // sortOrder を再計算 (0, 10, 20, ...)
-                        const updatedParamArray = currentParams.map((p, index) => ({
-                            ...p,
-                            sortOrder: index * 10,
-                        }));
-
-                        return { ...pl, param: updatedParamArray };
-                    }
-                    return pl;
-                });
-                return updatedList;
-            });
-        },
-        [],
-    );
 
     return (
         <TableContainer component={Paper} sx={{ margin: 2 }}>

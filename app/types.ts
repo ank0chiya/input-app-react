@@ -24,7 +24,7 @@ export interface Product {
 export interface Params {
     productId: number;
     attributeId: number;
-    param: (Type1Param | Type2Param | Type3Param)[];
+    param: ParamDetail[];
 }
 
 export interface Param {
@@ -32,36 +32,38 @@ export interface Param {
     sortOrder: number;
 }
 
-export interface Type1Param extends Param {
+export interface ParamType1 extends Param {
     code: string;
     dispName: string;
     type: 'type1';
 }
 
-export interface Type2Param extends Param {
+export interface ParamType2 extends Param {
     min: number;
     increment: number;
     type: 'type2';
 }
 
-export interface Type3Param extends Param {
+export interface ParamType3 extends Param {
     code: string;
     dispName: string;
     type: 'type3';
 }
 
+export type ParamDetail = ParamType1 | ParamType2 | ParamType3;
+
 export interface BaseTableTopRow {
     prefix: Product['prefix'];
     type: Product['type'];
     cfgType: Product['cfgType'];
-    attributes: "項目値"
+    attributes: '項目値';
     paramHas: Attribute['paramHas'];
     contract: Attribute['contract'];
     public: Attribute['public'];
     masking: Attribute['masking'];
     online: Attribute['online'];
-    attributeAction: "actions";
-    productAction: "actions";
+    attributeAction: 'actions';
+    productAction: 'actions';
 }
 
 export interface BaseTableButtomRow {
@@ -79,5 +81,62 @@ export interface DetailTableRow {
     attributeJP: Attribute['attributeJP'];
     contract: Attribute['contract'];
     params: Params[];
-    paramAction: "actions";
+    paramAction: 'actions';
+}
+
+// EditableTableCell用のProps型
+export interface EditableCellProps {
+    value: string | number | boolean | undefined;
+    onChange: (newValue: string | number | boolean) => void;
+    type?: 'string' | 'number' | 'boolean';
+    editable?: boolean;
+    placeholder?: string;
+}
+
+// BodyRow コンポーネント用の Props 型定義を追加
+export interface BodyRowProps {
+    product: Product;
+    attribute: Attribute;
+    paramDetail: ParamDetail | undefined; // この行に対応するパラメータ (存在しない場合あり)
+    rowSpanCount: number; // この属性グループが占める行数
+    isFirstRowOfAttribute: boolean; // この属性グループ内の最初の行かどうか
+    // 必要なハンドラ関数をそのまま渡す
+    handleProductChange: (productId: number, field: keyof Product, value: any) => void;
+    handleAttributeChange: (
+        productId: number,
+        attributeId: number,
+        field: keyof Attribute,
+        value: any,
+    ) => void;
+    handleParamChange: (
+        productId: number,
+        attributeId: number,
+        paramId: number,
+        field: keyof ParamType1 | keyof ParamType2 | keyof ParamType3,
+        value: any,
+    ) => void;
+    handleAddParam: (productId: number, attributeId: number, afterParamId?: number) => void;
+    handleDeleteParam: (productId: number, attributeId: number, paramId: number) => void;
+}
+
+// TableBodyProps のインポートパスなどを確認・調整 (もし必要なら)
+export interface TableBodyProps {
+    products: Product[];
+    paramsMap: Map<string, Params>;
+    handleProductChange: (productId: number, field: keyof Product, value: any) => void;
+    handleAttributeChange: (
+        productId: number,
+        attributeId: number,
+        field: keyof Attribute,
+        value: any,
+    ) => void;
+    handleParamChange: (
+        productId: number,
+        attributeId: number,
+        paramId: number,
+        field: keyof ParamType1 | keyof ParamType2 | keyof ParamType3,
+        value: any,
+    ) => void;
+    handleAddParam: (productId: number, attributeId: number, afterParamId?: number) => void;
+    handleDeleteParam: (productId: number, attributeId: number, paramId: number) => void;
 }

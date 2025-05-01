@@ -5,6 +5,7 @@ import { Product, Params } from '../types';
 import { sample_products, sample_params } from '../data/data'; // サンプルデータをインポート
 
 import BaseTable from './BaseTable';
+import DetailTable from './DetailTable';
 // import DetailTable from './DetailTable';
 
 interface TabPanelProps {
@@ -57,7 +58,9 @@ export default function TabbedDataManager() {
             <TabPanel value={activeTab} index={0}>
                 <BaseTable />
             </TabPanel>
-            <TabPanel value={activeTab} index={1} />
+            <TabPanel value={activeTab} index={1} >
+                <DetailTable />
+            </TabPanel>
         </Box>
     );
 }
