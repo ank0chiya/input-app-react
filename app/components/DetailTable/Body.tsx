@@ -8,11 +8,12 @@ import type { TableBodyProps } from '@/app/types';
 const Body: React.FC<TableBodyProps> = ({
     products,
     paramsMap,
-    handleProductChange, // ハンドラを Props として受け取る
     handleAttributeChange,
     handleParamChange,
     handleAddParam,
     handleDeleteParam,
+    handleMoveParamUp,   // 上へ移動ハンドラを受け取る
+    handleMoveParamDown, // 下へ移動ハンドラを受け取る
 }) => {
     return (
         <TableBody>
@@ -21,6 +22,7 @@ const Body: React.FC<TableBodyProps> = ({
                 .map((product) =>
                     product.attributes
                         .sort((a, b) => a.sortOrder - b.sortOrder)
+                        .filter((attribute) => attribute.paramHas)
                         .map((attribute) => {
                             const relatedParams = paramsMap.get(
                                 `${product.productId}-${attribute.attributeId}`,
@@ -49,12 +51,12 @@ const Body: React.FC<TableBodyProps> = ({
                                         rowSpanCount={rowSpanCount}
                                         isFirstRowOfAttribute={isFirstRowOfAttribute}
                                         // すべてのハンドラを BodyRow に渡す
-                                        handleProductChange={handleProductChange}
                                         handleAttributeChange={handleAttributeChange}
                                         handleParamChange={handleParamChange}
                                         handleAddParam={handleAddParam}
                                         handleDeleteParam={handleDeleteParam}
-                                        
+                                        handleMoveParamUp={handleMoveParamUp}
+                                        handleMoveParamDown={handleMoveParamDown}
                                     />
                                 );
                             });

@@ -1,9 +1,12 @@
 // src/components/BodyRow.tsx
 import React from 'react';
 import { TableRow, TableCell, Box, IconButton, Tooltip } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'; // パラメータ追加アイコン
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'; // パラメータ削除アイコン
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'; // 上矢印アイコンをインポート
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'; // 下矢印アイコンをインポート
 import EditableTableCell from './EditableTableCell';
+
 // types.ts から必要な型をインポート (パスを環境に合わせて調整)
 import type { BodyRowProps, ParamType1, ParamType2, ParamType3 } from '@/app/types';
 
@@ -13,11 +16,12 @@ const BodyRow: React.FC<BodyRowProps> = ({
     paramDetail,
     rowSpanCount,
     isFirstRowOfAttribute,
-    handleProductChange, // Props を展開して受け取る
     handleAttributeChange,
     handleParamChange,
     handleAddParam,
     handleDeleteParam,
+    handleMoveParamUp,
+    handleMoveParamDown,
 }) => {
     // ユニークキー (paramDetailが存在しない場合も考慮)
     const uniqueKey = `${product.productId}-${attribute.attributeId}-${paramDetail?.paramId ?? 'attr-only'}-${isFirstRowOfAttribute ? 'first' : 'other'}`;
@@ -176,6 +180,50 @@ const BodyRow: React.FC<BodyRowProps> = ({
                         gap: 0.5,
                     }}
                 >
+                    {/* --- 上へ移動ボタン --- */}
+                    {/* paramDetail が存在する場合のみ（パラメータ行にのみ）表示 */}
+                    {paramDetail && (
+                        <Tooltip title="Move Up">
+                            {/* onClick で handleMoveParamUp を呼び出す */}
+                            {/* disabled 属性はハンドラ側で制御するため、ここでは設定しない */}
+                            <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() =>
+                                    handleMoveParamUp(
+                                        product.productId,
+                                        attribute.attributeId,
+                                        paramDetail.paramId,
+                                    )
+                                }
+                            >
+                                <ArrowUpwardIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+
+                    {/* --- 下へ移動ボタン --- */}
+                    {/* paramDetail が存在する場合のみ表示 */}
+                    {paramDetail && (
+                        <Tooltip title="Move Down">
+                            {/* onClick で handleMoveParamDown を呼び出す */}
+                            {/* disabled 属性はハンドラ側で制御するため、ここでは設定しない */}
+                            <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() =>
+                                    handleMoveParamDown(
+                                        product.productId,
+                                        attribute.attributeId,
+                                        paramDetail.paramId,
+                                    )
+                                }
+                            >
+                                <ArrowDownwardIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+
                     {/* --- 追加ボタン --- */}
                     {/* 常に表示し、クリックされた行の下に追加 (paramDetailがない場合は最初の要素として追加) */}
                     {attribute.paramHas && ( // paramHasがtrueの場合のみ追加を許可
@@ -185,6 +233,7 @@ const BodyRow: React.FC<BodyRowProps> = ({
                             {/* paramDetail?.paramId が存在すればそれを afterParamId として渡す */}
                             <IconButton
                                 size="small"
+                                color="success"
                                 onClick={() =>
                                     handleAddParam(
                                         product.productId,
@@ -193,7 +242,7 @@ const BodyRow: React.FC<BodyRowProps> = ({
                                     )
                                 }
                             >
-                                <AddIcon fontSize="inherit" color="primary" />
+                                <AddCircleOutlineIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     )}
@@ -204,6 +253,7 @@ const BodyRow: React.FC<BodyRowProps> = ({
                         <Tooltip title="Delete Parameter">
                             <IconButton
                                 size="small"
+                                color="error"
                                 onClick={() =>
                                     handleDeleteParam(
                                         product.productId,
@@ -212,7 +262,7 @@ const BodyRow: React.FC<BodyRowProps> = ({
                                     )
                                 }
                             >
-                                <DeleteIcon fontSize="inherit" color="error" />
+                                <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     )}

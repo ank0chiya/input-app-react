@@ -1,4 +1,4 @@
-import { Attribute, Product } from '@/app/types';
+import { Attribute, Param, Params, Product } from '@/app/types';
 import { createContext, useContext, useCallback } from 'react';
 
 interface BaseTableContextType {
@@ -41,17 +41,27 @@ const BaseTableContext = createContext<BaseTableContextType | undefined>(undefin
 interface BaseTableProviderProps {
     children: React.ReactNode;
     baseTableData: Product[];
+    detailTableData: Params[];
     onDataChange: (updatedRow: Product, rowIndex: number) => void;
     onAddRow: (rowIndex: number) => void;
     onDeleteRow: (rowIndex: number) => void;
+    setParamsData: React.Dispatch<React.SetStateAction<Params[]>>;
+    onAddParamsDataRow: (
+        targetRow: Product,
+        updatedAttributes: Attribute[],
+        attributeIndex: number,
+    ) => void;
 }
 
 export function BaseTableProvider({
     children,
     baseTableData,
+    detailTableData,
     onDataChange,
     onAddRow,
     onDeleteRow,
+    setParamsData,
+    onAddParamsDataRow
 }: BaseTableProviderProps) {
     const handleTestContext = useCallback((num1: number, num2: number) => {
         console.log('test context', num1, num2);
@@ -114,6 +124,7 @@ export function BaseTableProvider({
             );
             const updatedRow = { ...targetRow, attributes: updatedAttributes };
             handleRowUpdate(updatedRow, rowIndex);
+            onAddParamsDataRow(targetRow, updatedAttributes, attributeIndex)
         },
         [baseTableData, handleRowUpdate],
     );

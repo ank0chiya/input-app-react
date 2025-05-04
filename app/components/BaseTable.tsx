@@ -1,6 +1,6 @@
-'use client';
+// 'use client';
 import React, { useCallback, useState } from 'react';
-import { Product } from '../types';
+import { Product, Attribute, Params } from '../types';
 import { Table, TableContainer, Paper } from '@mui/material';
 import BaseTableHeader from './BaseTable/Header';
 import BaseTableBody from './BaseTable/Body';
@@ -22,13 +22,25 @@ const createNewRowData = (productId: number, sortOrder: number): Product => {
     };
 };
 
-export default function BaseTable() {
-    const [tableData, setTableData] = useState<Product[]>(sample_products);
+interface BaseTableProps {
+    baseTableData: Product[];
+    setProductData: React.Dispatch<React.SetStateAction<Product[]>>;
+    detailTableData: Params[];
+    setParamsData: React.Dispatch<React.SetStateAction<Params[]>>;
+    handleAddParamsRow: (targetRow: Product, updatedAttributes: Attribute[], attributeIndex: number) => void
+}
 
-    const [isRegistering, setIsRegistering] = useState(false);
+export default function BaseTable({
+    baseTableData,
+    detailTableData,
+    setProductData,
+    setParamsData,
+    handleAddParamsRow,
+}: BaseTableProps) {
+    
     // 子コンポーネント から行データの変更通知を受け取るコールバック
     const handleDataUpdate = useCallback((updatedRow: Product, rowIndex: number) => {
-        setTableData((prevData) => {
+        setProductData((prevData) => {
             return prevData.map((row, index) => (index === rowIndex ? updatedRow : row));
         });
     }, []);
@@ -36,7 +48,7 @@ export default function BaseTable() {
     // DataTable から行追加通知を受け取るコールバック
     const handleAddRowCallback = useCallback((rowIndex: number) => {
         // const newRow = createNewRowData();
-        setTableData((prevData) => {
+        setProductData((prevData) => {
             const maxId = Math.max(...prevData.map((row) => row.productId), 0);
 
             const newRow = createNewRowData(maxId + 1, rowIndex);
@@ -51,7 +63,7 @@ export default function BaseTable() {
     }, []);
 
     const handleDeleteRowCallback = useCallback((rowIndex: number) => {
-        setTableData((prevData) => {
+        setProductData((prevData) => {
             if (prevData.length <= 1) {
                 return prevData;
             }
@@ -61,17 +73,20 @@ export default function BaseTable() {
 
     return (
         <>
-            <BaseTableManager tableData={tableData} />
+            <BaseTableManager tableData={baseTableData} />
             <TableContainer component={Paper}>
                 <Table sx={{ minWidth: 900 }} aria-label="data table with parameters expanded">
                     <BaseTableHeader />
                     <BaseTableProvider
-                        baseTableData={tableData}
+                        baseTableData={baseTableData}
+                        detailTableData={detailTableData}
+                        setParamsData={setParamsData}
+                        onAddParamsDataRow={handleAddParamsRow}
                         onDataChange={handleDataUpdate} // 行データ変更時のコールバック
                         onAddRow={handleAddRowCallback} // 行追加時のコールバック
                         onDeleteRow={handleDeleteRowCallback} // 行削除時のコールバック>
                     >
-                        <BaseTableBody tableData={tableData} />
+                        <BaseTableBody tableData={baseTableData} />
                     </BaseTableProvider>
                 </Table>
             </TableContainer>

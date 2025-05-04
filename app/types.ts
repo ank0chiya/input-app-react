@@ -24,7 +24,7 @@ export interface Product {
 export interface Params {
     productId: number;
     attributeId: number;
-    param: ParamDetail[];
+    param: ParamType1[] | ParamType2[] | ParamType3[];
 }
 
 export interface Param {
@@ -101,7 +101,6 @@ export interface BodyRowProps {
     rowSpanCount: number; // この属性グループが占める行数
     isFirstRowOfAttribute: boolean; // この属性グループ内の最初の行かどうか
     // 必要なハンドラ関数をそのまま渡す
-    handleProductChange: (productId: number, field: keyof Product, value: any) => void;
     handleAttributeChange: (
         productId: number,
         attributeId: number,
@@ -117,13 +116,14 @@ export interface BodyRowProps {
     ) => void;
     handleAddParam: (productId: number, attributeId: number, afterParamId?: number) => void;
     handleDeleteParam: (productId: number, attributeId: number, paramId: number) => void;
+    handleMoveParamUp: (productId: number, attributeId: number, paramId: number) => void;
+    handleMoveParamDown: (productId: number, attributeId: number, paramId: number) => void;
 }
 
 // TableBodyProps のインポートパスなどを確認・調整 (もし必要なら)
 export interface TableBodyProps {
     products: Product[];
     paramsMap: Map<string, Params>;
-    handleProductChange: (productId: number, field: keyof Product, value: any) => void;
     handleAttributeChange: (
         productId: number,
         attributeId: number,
@@ -139,4 +139,6 @@ export interface TableBodyProps {
     ) => void;
     handleAddParam: (productId: number, attributeId: number, afterParamId?: number) => void;
     handleDeleteParam: (productId: number, attributeId: number, paramId: number) => void;
+    handleMoveParamUp: (productId: number, attributeId: number, paramId: number) => void;
+    handleMoveParamDown: (productId: number, attributeId: number, paramId: number) => void;
 }
