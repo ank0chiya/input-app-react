@@ -4,9 +4,6 @@ import { createContext, useContext, useCallback } from 'react';
 interface BaseTableContextType {
     tableData: Product[];
     handleTestContext: (num1: number, num2: number) => void;
-    onDataChange: (updatedRow: Product, rowIndex: number) => void;
-    onAddRow: (rowIndex: number) => void;
-    onDeleteRow: (rowIndex: number) => void;
     handleAddRow: (rowIndex: number) => void;
     handleDeleteRow: (rowIndex: number) => void;
     handleAddAttribute: (rowIndex: number, attributeIndex?: number) => void;
@@ -42,9 +39,7 @@ interface BaseTableProviderProps {
     children: React.ReactNode;
     baseTableData: Product[];
     detailTableData: Params[];
-    onDataChange: (updatedRow: Product, rowIndex: number) => void;
-    onAddRow: (rowIndex: number) => void;
-    onDeleteRow: (rowIndex: number) => void;
+    setProductData: React.Dispatch<React.SetStateAction<Product[]>>;
     setParamsData: React.Dispatch<React.SetStateAction<Params[]>>;
     onAddParamsDataRow: (
         targetRow: Product,
@@ -53,33 +48,84 @@ interface BaseTableProviderProps {
     ) => void;
 }
 
+// 新しい行のデフォルトデータを作成する関数
+const createNewRowData = (productId: number, sortOrder: number): Product => {
+    // ランダムなアルファベット3文字を生成
+    const randomAlpha = Math.random().toString(36).substring(2, 5).toUpperCase();
+    return {
+        productId: productId,
+        prefix: randomAlpha,
+        type: '',
+        cfgType: '',
+        attributes: [], // 最初はパラメータなし
+        sortOrder: sortOrder,
+    };
+};
+
 export function BaseTableProvider({
     children,
     baseTableData,
     detailTableData,
-    onDataChange,
-    onAddRow,
-    onDeleteRow,
+    setProductData,
     setParamsData,
-    onAddParamsDataRow
+    onAddParamsDataRow,
 }: BaseTableProviderProps) {
     const handleTestContext = useCallback((num1: number, num2: number) => {
         console.log('test context', num1, num2);
         console.log('test context sum', num1 + num2);
     }, []);
 
+    // 子コンポーネント から行データの変更通知を受け取るコールバック
+    const handleDataUpdate = useCallback((updatedRow: Product, rowIndex: number) => {
+        setProductData((prevData) => {
+            return prevData.map((row, index) => (index === rowIndex ? updatedRow : row));
+        });
+    }, []);
+
+    // DataTable から行追加通知を受け取るコールバック
+    const handleAddRowCallback = useCallback((rowIndex: number) => {
+        // const newRow = createNewRowData();
+        setProductData((prevData) => {
+            const maxId = Math.max(...prevData.map((row) => row.productId), 0);
+
+            const newRow = createNewRowData(maxId + 1, rowIndex);
+
+            const newData = [
+                ...prevData.slice(0, rowIndex + 1), // クリックされた行の直後に追加
+                newRow,
+                ...prevData.slice(rowIndex + 1),
+            ];
+            return newData;
+        });
+    }, []);
+
+    const handleDeleteRowCallback = useCallback((rowIndex: number) => {
+        setProductData((prevData) => {
+            if (prevData.length <= 1) {
+                return prevData;
+            }
+            return prevData.filter((_, index) => index !== rowIndex);
+        });
+    }, []);
+
     // 行追加ボタンが押された時のハンドラ (親コンポーネントの関数を呼び出す)
-    const handleAddRow = useCallback((rowIndex: number) => onAddRow(rowIndex), [onAddRow]);
+    const handleAddRow = useCallback(
+        (rowIndex: number) => handleAddRowCallback(rowIndex),
+        [handleAddRowCallback],
+    );
 
     // 行削除ボタンが押された時のハンドラ (親コンポーネントの関数を呼び出す)
-    const handleDeleteRow = useCallback((rowIndex: number) => onDeleteRow(rowIndex), [onDeleteRow]);
+    const handleDeleteRow = useCallback(
+        (rowIndex: number) => handleDeleteRowCallback(rowIndex),
+        [handleDeleteRowCallback],
+    );
 
     // 行データ全体の更新を親コンポーネントに通知する関数
     const handleRowUpdate = useCallback(
         (updatedRow: Product, rowIndex: number) => {
-            onDataChange(updatedRow, rowIndex);
+            handleDataUpdate(updatedRow, rowIndex);
         },
-        [onDataChange],
+        [handleDataUpdate],
     );
 
     // Productのセル (ID, タイプ, 設定タイプ) の値が変更された時のハンドラ
@@ -124,7 +170,7 @@ export function BaseTableProvider({
             );
             const updatedRow = { ...targetRow, attributes: updatedAttributes };
             handleRowUpdate(updatedRow, rowIndex);
-            onAddParamsDataRow(targetRow, updatedAttributes, attributeIndex)
+            onAddParamsDataRow(targetRow, updatedAttributes, attributeIndex);
         },
         [baseTableData, handleRowUpdate],
     );
@@ -233,9 +279,6 @@ export function BaseTableProvider({
 
     const value = {
         tableData: baseTableData,
-        onDataChange,
-        onAddRow,
-        onDeleteRow,
         handleTestContext,
         handleAddRow,
         handleDeleteRow,

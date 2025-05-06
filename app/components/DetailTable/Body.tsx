@@ -4,17 +4,10 @@ import { TableBody } from '@mui/material';
 import BodyRow from './BodyRow'; // 作成した BodyRow コンポーネントをインポート
 // types.ts から必要な型をインポート (パスを環境に合わせて調整)
 import type { TableBodyProps } from '@/app/types';
+import { usePattern } from './contexts/DetailTableContext';
 
-const Body: React.FC<TableBodyProps> = ({
-    products,
-    paramsMap,
-    handleAttributeChange,
-    handleParamChange,
-    handleAddParam,
-    handleDeleteParam,
-    handleMoveParamUp,   // 上へ移動ハンドラを受け取る
-    handleMoveParamDown, // 下へ移動ハンドラを受け取る
-}) => {
+const DetailTableBody: React.FC<TableBodyProps> = ({ products }) => {
+    const { paramsMap } = usePattern();
     return (
         <TableBody>
             {products
@@ -50,13 +43,6 @@ const Body: React.FC<TableBodyProps> = ({
                                         paramDetail={paramDetail}
                                         rowSpanCount={rowSpanCount}
                                         isFirstRowOfAttribute={isFirstRowOfAttribute}
-                                        // すべてのハンドラを BodyRow に渡す
-                                        handleAttributeChange={handleAttributeChange}
-                                        handleParamChange={handleParamChange}
-                                        handleAddParam={handleAddParam}
-                                        handleDeleteParam={handleDeleteParam}
-                                        handleMoveParamUp={handleMoveParamUp}
-                                        handleMoveParamDown={handleMoveParamDown}
                                     />
                                 );
                             });
@@ -66,4 +52,4 @@ const Body: React.FC<TableBodyProps> = ({
     );
 };
 
-export default Body;
+export default DetailTableBody;

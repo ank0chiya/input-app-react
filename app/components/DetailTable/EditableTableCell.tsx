@@ -54,21 +54,15 @@ const EditableTableCell: React.FC<EditableCellProps> = ({
 
     return (
         <TextField
-            value={internalValue ?? ''} // undefined/nullを空文字に
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            type={type === 'number' ? 'number' : 'text'}
             variant="standard"
             size="small"
-            placeholder={placeholder}
             fullWidth
-            sx={{
-                // 標準的な入力欄に見せるための最小限のスタイル
-                padding: 0,
-                margin: 0,
-                '.MuiInputBase-input': { padding: '2px 0px' }, // パディング調整
-            }}
-            inputProps={type === 'number' ? { step: 'any' } : {}} // numberの場合、任意の小数を許可
+            value={internalValue ?? ''} // undefined/nullを空文字に
+            onChange={handleInputChange}
+            placeholder="Enter text"
+            sx={{ fontSize: '0.875rem' }}
+            onBlur={handleBlur}
+            type={type === 'number' ? 'number' : 'text'}
         />
     );
 };

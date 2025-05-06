@@ -6,6 +6,7 @@ import { sample_products, sample_params } from '../data/data'; // サンプル�
 
 import BaseTable from './BaseTable';
 import DetailTable from './DetailTable';
+import ButtonManager from './ButtonManager';
 // import DetailTable from './DetailTable';
 
 interface TabPanelProps {
@@ -49,6 +50,15 @@ export default function TabbedDataManager() {
 
     const handleAddParamsRow = useCallback(
         (targetRow: Product, updatedAttributes: Attribute[], attributeIndex: number) => {
+            const productId = targetRow.productId;
+            const attributeId = updatedAttributes[attributeIndex].attributeId;
+
+            const hasParm = detailTableData.some(
+                (data) => data.productId === productId && data.attributeId === attributeId,
+            );
+            if (hasParm) {
+                return;
+            }
             if (updatedAttributes[attributeIndex].paramHas) {
                 setParamsData((prev) => {
                     const productId = targetRow.productId;
@@ -66,31 +76,38 @@ export default function TabbedDataManager() {
     );
 
     return (
-        <Box sx={{ width: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={activeTab} onChange={handleTabChange} aria-label="Data manager tabs">
-                    <Tab label="基本情報" {...a11yProps(0)} />
-                    <Tab label="詳細情報" {...a11yProps(1)} />
-                </Tabs>
-            </Box>
+        <>
+            <ButtonManager baseTableData={baseTableData} detailTableData={detailTableData} />
+            <Box sx={{ width: '100%' }}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        aria-label="Data manager tabs"
+                    >
+                        <Tab label="基本情報" {...a11yProps(0)} />
+                        <Tab label="詳細情報" {...a11yProps(1)} />
+                    </Tabs>
+                </Box>
 
-            <TabPanel value={activeTab} index={0}>
-                <BaseTable
-                    baseTableData={baseTableData}
-                    setProductData={setProductData}
-                    detailTableData={detailTableData}
-                    setParamsData={setParamsData}
-                    handleAddParamsRow={handleAddParamsRow}
-                />
-            </TabPanel>
-            <TabPanel value={activeTab} index={1}>
-                <DetailTable
-                    baseTableData={baseTableData}
-                    setProductData={setProductData}
-                    detailTableData={detailTableData}
-                    setParamsData={setParamsData}
-                />
-            </TabPanel>
-        </Box>
+                <TabPanel value={activeTab} index={0}>
+                    <BaseTable
+                        baseTableData={baseTableData}
+                        setProductData={setProductData}
+                        detailTableData={detailTableData}
+                        setParamsData={setParamsData}
+                        handleAddParamsRow={handleAddParamsRow}
+                    />
+                </TabPanel>
+                <TabPanel value={activeTab} index={1}>
+                    <DetailTable
+                        baseTableData={baseTableData}
+                        setProductData={setProductData}
+                        detailTableData={detailTableData}
+                        setParamsData={setParamsData}
+                    />
+                </TabPanel>
+            </Box>
+        </>
     );
 }

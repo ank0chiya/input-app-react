@@ -1,14 +1,27 @@
 // src/components/BodyRow.tsx
 import React from 'react';
-import { TableRow, TableCell, Box, IconButton, Tooltip } from '@mui/material';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'; // パラメータ追加アイコン
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'; // パラメータ削除アイコン
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'; // 上矢印アイコンをインポート
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'; // 下矢印アイコンをインポート
-import EditableTableCell from './EditableTableCell';
+import { TableRow } from '@mui/material';
 
 // types.ts から必要な型をインポート (パスを環境に合わせて調整)
-import type { BodyRowProps, ParamType1, ParamType2, ParamType3 } from '@/app/types';
+import type { BodyRowProps, ParamType1, ParamType2, ParamType3, ParamDetail } from '@/app/types';
+
+import {
+    ReadOnlyCell,
+    EmptyCell,
+    CheckboxCell,
+    TextFieldCell,
+    NumberFieldCell,
+    ActionFieldCells,
+} from './BodyCells';
+import { usePattern } from './contexts/DetailTableContext';
+
+// Type guards to check paramDetail type
+function isParamType1Or3(param: ParamDetail | null | undefined): param is ParamType1 | ParamType3 {
+    return !!param && (param.type === 'type1' || param.type === 'type3');
+}
+function isParamType2(param: ParamDetail | null | undefined): param is ParamType2 {
+    return !!param && param.type === 'type2';
+}
 
 const BodyRow: React.FC<BodyRowProps> = ({
     product,
@@ -16,258 +29,103 @@ const BodyRow: React.FC<BodyRowProps> = ({
     paramDetail,
     rowSpanCount,
     isFirstRowOfAttribute,
-    handleAttributeChange,
-    handleParamChange,
-    handleAddParam,
-    handleDeleteParam,
-    handleMoveParamUp,
-    handleMoveParamDown,
 }) => {
+    const { handleParamChange, handleAttributeChange } = usePattern();
     // ユニークキー (paramDetailが存在しない場合も考慮)
     const uniqueKey = `${product.productId}-${attribute.attributeId}-${paramDetail?.paramId ?? 'attr-only'}-${isFirstRowOfAttribute ? 'first' : 'other'}`;
 
+    // --- Helper function to create onChange handlers --- (変更なし)
+    const createChangeHandler =
+        (handler: (...args: any[]) => void, ...prefixArgs: (string | number | undefined)[]) =>
+        (fieldName: string) =>
+        (newValue: any) => {
+            const idArgs = [...prefixArgs];
+            if (idArgs.length === 2) {
+                // Attribute changes
+            } else if (idArgs.length === 3 && idArgs[2] === undefined && paramDetail?.paramId) {
+                idArgs[2] = paramDetail.paramId;
+            }
+            handler(...idArgs.filter((arg) => arg !== undefined), fieldName, newValue);
+        };
+
+    const createParamHandler = createChangeHandler(
+        handleParamChange,
+        product.productId,
+        attribute.attributeId,
+        paramDetail?.paramId,
+    );
+    const createAttributeHandler = createChangeHandler(
+        handleAttributeChange,
+        product.productId,
+        attribute.attributeId,
+    );
+
+    // --- Render Parameter Cells
+    let codeCell = <EmptyCell />;
+    let dispNameCell = <EmptyCell />;
+    let minCell = <EmptyCell />;
+    let incrementCell = <EmptyCell />;
+
+    if (isParamType1Or3(paramDetail)) {
+        codeCell = <TextFieldCell value={paramDetail.code} onChange={createParamHandler('code')} />;
+        dispNameCell = (
+            <TextFieldCell value={paramDetail.dispName} onChange={createParamHandler('dispName')} />
+        );
+    } else if (isParamType2(paramDetail)) {
+        minCell = (
+            <NumberFieldCell
+                value={paramDetail.min} // Pass number or string
+                onChange={createParamHandler('min')}
+            />
+        );
+        incrementCell = (
+            <NumberFieldCell
+                value={paramDetail.increment} // Pass number or string
+                onChange={createParamHandler('increment')}
+            />
+        );
+    }
+
     return (
-        <TableRow key={uniqueKey} sx={{ '& > td': { border: '1px solid #e0e0e0' } }}>
+        <TableRow
+            key={uniqueKey}
+            sx={{
+                '& > td': {
+                    border: '1px solid rgba(224, 224, 224, 1)',
+                    verticalAlign: 'middle',
+                    p: 0.5,
+                },
+            }}
+        >
             {/* --- Product & Attribute Cells (最初の行のみ表示 & rowspan) --- */}
             {isFirstRowOfAttribute && (
                 <>
-                    <TableCell rowSpan={rowSpanCount} valign="top">
-                        <EditableTableCell
-                            value={product.prefix}
-                            onChange={() => {}}
-                            editable={false}
-                        />
-                    </TableCell>
-                    <TableCell rowSpan={rowSpanCount} valign="top">
-                        <EditableTableCell
-                            value={product.type}
-                            onChange={() => {}}
-                            editable={false}
-                        />
-                    </TableCell>
-                    <TableCell rowSpan={rowSpanCount} valign="top">
-                        <EditableTableCell
-                            value={product.cfgType}
-                            onChange={() => {}}
-                            editable={false}
-                        />
-                    </TableCell>
-                    <TableCell rowSpan={rowSpanCount} valign="top">
-                        {attribute.attribute}
-                    </TableCell>
-                    <TableCell rowSpan={rowSpanCount} valign="top">
-                        <EditableTableCell
-                            value={attribute.attributeJP}
-                            onChange={() => {}}
-                            editable={false}
-                        />
-                    </TableCell>
-                    <TableCell rowSpan={rowSpanCount} valign="top">
-                        <EditableTableCell
-                            value={attribute.contract}
-                            onChange={() => {}}
-                            editable={false}
-                        />
-                    </TableCell>
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={product.prefix} />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={product.type} />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={product.cfgType} />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={attribute.attribute} />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={attribute.attributeJP} />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={attribute.contract} />
                 </>
             )}
 
-            {/* --- Parameter Cells (各行に表示) --- */}
-            {/* code */}
-            <TableCell>
-                {paramDetail && (paramDetail.type === 'type1' || paramDetail.type === 'type3') ? (
-                    <EditableTableCell
-                        value={paramDetail.code}
-                        onChange={(v) =>
-                            handleParamChange(
-                                product.productId,
-                                attribute.attributeId,
-                                paramDetail.paramId,
-                                'code',
-                                v,
-                            )
-                        }
-                    />
-                ) : isFirstRowOfAttribute && !paramDetail ? (
-                    <span style={{ color: 'grey' }}></span>
-                ) : null}
-            </TableCell>
-            {/* dispName */}
-            <TableCell>
-                {paramDetail && (paramDetail.type === 'type1' || paramDetail.type === 'type3') ? (
-                    <EditableTableCell
-                        value={(paramDetail as ParamType1 | ParamType3).dispName}
-                        onChange={(v) =>
-                            handleParamChange(
-                                product.productId,
-                                attribute.attributeId,
-                                paramDetail.paramId,
-                                'dispName',
-                                v,
-                            )
-                        }
-                    />
-                ) : isFirstRowOfAttribute && !paramDetail ? (
-                    <span style={{ color: 'grey' }}></span>
-                ) : null}
-            </TableCell>
-            {/* min */}
-            <TableCell>
-                {paramDetail && paramDetail.type === 'type2' ? (
-                    <EditableTableCell
-                        value={(paramDetail as ParamType2).min}
-                        onChange={(v) =>
-                            handleParamChange(
-                                product.productId,
-                                attribute.attributeId,
-                                paramDetail.paramId,
-                                'min',
-                                v,
-                            )
-                        }
-                        type="number"
-                    />
-                ) : isFirstRowOfAttribute && !paramDetail ? (
-                    <span style={{ color: 'grey' }}></span>
-                ) : null}
-            </TableCell>
-            {/* increment */}
-            <TableCell>
-                {paramDetail && paramDetail.type === 'type2' ? (
-                    <EditableTableCell
-                        value={(paramDetail as ParamType2).increment}
-                        onChange={(v) =>
-                            handleParamChange(
-                                product.productId,
-                                attribute.attributeId,
-                                paramDetail.paramId,
-                                'increment',
-                                v,
-                            )
-                        }
-                        type="number"
-                    />
-                ) : isFirstRowOfAttribute && !paramDetail ? (
-                    <span style={{ color: 'grey' }}></span>
-                ) : null}
-            </TableCell>
+            {/* --- Parameter Cells --- */}
+            {codeCell}
+            {dispNameCell}
+            {minCell}
+            {incrementCell}
 
-            {/* --- online Cell (最初の行のみ表示 & rowspan) --- */}
+            {/* --- Online Cell --- */}
             {isFirstRowOfAttribute && (
-                <TableCell rowSpan={rowSpanCount} valign="top" align="center">
-                    <EditableTableCell
-                        value={attribute.online}
-                        onChange={(v) =>
-                            handleAttributeChange(
-                                product.productId,
-                                attribute.attributeId,
-                                'online',
-                                v,
-                            )
-                        }
-                        type="boolean"
-                    />
-                </TableCell>
+                <CheckboxCell
+                    rowSpan={rowSpanCount}
+                    value={attribute.online}
+                    onChange={createAttributeHandler('online')}
+                />
             )}
 
-            {/* --- Action Cell (各行に表示) --- */}
-            <TableCell align="center" sx={{ minWidth: 100 }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: 0.5,
-                    }}
-                >
-                    {/* --- 上へ移動ボタン --- */}
-                    {/* paramDetail が存在する場合のみ（パラメータ行にのみ）表示 */}
-                    {paramDetail && (
-                        <Tooltip title="Move Up">
-                            {/* onClick で handleMoveParamUp を呼び出す */}
-                            {/* disabled 属性はハンドラ側で制御するため、ここでは設定しない */}
-                            <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() =>
-                                    handleMoveParamUp(
-                                        product.productId,
-                                        attribute.attributeId,
-                                        paramDetail.paramId,
-                                    )
-                                }
-                            >
-                                <ArrowUpwardIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-
-                    {/* --- 下へ移動ボタン --- */}
-                    {/* paramDetail が存在する場合のみ表示 */}
-                    {paramDetail && (
-                        <Tooltip title="Move Down">
-                            {/* onClick で handleMoveParamDown を呼び出す */}
-                            {/* disabled 属性はハンドラ側で制御するため、ここでは設定しない */}
-                            <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() =>
-                                    handleMoveParamDown(
-                                        product.productId,
-                                        attribute.attributeId,
-                                        paramDetail.paramId,
-                                    )
-                                }
-                            >
-                                <ArrowDownwardIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-
-                    {/* --- 追加ボタン --- */}
-                    {/* 常に表示し、クリックされた行の下に追加 (paramDetailがない場合は最初の要素として追加) */}
-                    {attribute.paramHas && ( // paramHasがtrueの場合のみ追加を許可
-                        <Tooltip
-                            title={paramDetail ? 'Insert Parameter Below' : 'Add First Parameter'}
-                        >
-                            {/* paramDetail?.paramId が存在すればそれを afterParamId として渡す */}
-                            <IconButton
-                                size="small"
-                                color="success"
-                                onClick={() =>
-                                    handleAddParam(
-                                        product.productId,
-                                        attribute.attributeId,
-                                        paramDetail?.paramId,
-                                    )
-                                }
-                            >
-                                <AddCircleOutlineIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-
-                    {/* --- 削除ボタン --- */}
-                    {/* paramDetail が存在する場合のみ表示 */}
-                    {paramDetail && (
-                        <Tooltip title="Delete Parameter">
-                            <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() =>
-                                    handleDeleteParam(
-                                        product.productId,
-                                        attribute.attributeId,
-                                        paramDetail.paramId,
-                                    )
-                                }
-                            >
-                                <DeleteOutlineIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-                </Box>
-            </TableCell>
+            {/* Action Cell (Replaced with ActionCell component) */}
+            <ActionFieldCells product={product} attribute={attribute} paramDetail={paramDetail} />
         </TableRow>
     );
 };

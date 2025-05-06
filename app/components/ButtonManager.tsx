@@ -1,19 +1,25 @@
 'use client';
 import React, { useState } from 'react';
-import { Product } from '@/app/types';
+import { Params, Product } from '@/app/types';
 import { Box, Button } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download'; // アイコン
 import SaveIcon from '@mui/icons-material/Save'; // アイコン
 import CircularProgress from '@mui/material/CircularProgress'; // ローディング表示
 
-export default function DataTableManager({ tableData }: { tableData: Product[] }) {
+export default function ButtonManager({
+    baseTableData,
+    detailTableData,
+}: {
+    baseTableData: Product[];
+    detailTableData: Params[];
+}) {
     // 登録処理中かどうかのフラグ (任意)
     const [isRegistering, setIsRegistering] = useState(false);
 
     // JSONダウンロードボタンのハンドラ
     const handleDownloadJson = () => {
         if (isRegistering) return; // 登録処理中は無視
-        const jsonString = JSON.stringify(tableData, null, 2); // 整形してJSON化
+        const jsonString = JSON.stringify(baseTableData, null, 2); // 整形してJSON化
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -28,7 +34,7 @@ export default function DataTableManager({ tableData }: { tableData: Product[] }
     // 登録ボタンのハンドラ
     const handleRegister = async () => {
         setIsRegistering(true); // ローディング開始
-        console.log('Registering data:', JSON.stringify(tableData, null, 2));
+        console.log('Registering data:', JSON.stringify(baseTableData, null, 2));
 
         // --- 将来のAPI連携処理 ---
         try {

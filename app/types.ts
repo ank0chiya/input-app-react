@@ -100,45 +100,9 @@ export interface BodyRowProps {
     paramDetail: ParamDetail | undefined; // この行に対応するパラメータ (存在しない場合あり)
     rowSpanCount: number; // この属性グループが占める行数
     isFirstRowOfAttribute: boolean; // この属性グループ内の最初の行かどうか
-    // 必要なハンドラ関数をそのまま渡す
-    handleAttributeChange: (
-        productId: number,
-        attributeId: number,
-        field: keyof Attribute,
-        value: any,
-    ) => void;
-    handleParamChange: (
-        productId: number,
-        attributeId: number,
-        paramId: number,
-        field: keyof ParamType1 | keyof ParamType2 | keyof ParamType3,
-        value: any,
-    ) => void;
-    handleAddParam: (productId: number, attributeId: number, afterParamId?: number) => void;
-    handleDeleteParam: (productId: number, attributeId: number, paramId: number) => void;
-    handleMoveParamUp: (productId: number, attributeId: number, paramId: number) => void;
-    handleMoveParamDown: (productId: number, attributeId: number, paramId: number) => void;
 }
 
 // TableBodyProps のインポートパスなどを確認・調整 (もし必要なら)
 export interface TableBodyProps {
     products: Product[];
-    paramsMap: Map<string, Params>;
-    handleAttributeChange: (
-        productId: number,
-        attributeId: number,
-        field: keyof Attribute,
-        value: any,
-    ) => void;
-    handleParamChange: (
-        productId: number,
-        attributeId: number,
-        paramId: number,
-        field: keyof ParamType1 | keyof ParamType2 | keyof ParamType3,
-        value: any,
-    ) => void;
-    handleAddParam: (productId: number, attributeId: number, afterParamId?: number) => void;
-    handleDeleteParam: (productId: number, attributeId: number, paramId: number) => void;
-    handleMoveParamUp: (productId: number, attributeId: number, paramId: number) => void;
-    handleMoveParamDown: (productId: number, attributeId: number, paramId: number) => void;
 }
