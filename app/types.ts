@@ -52,6 +52,30 @@ export interface ParamType3 extends Param {
 
 export type ParamDetail = ParamType1 | ParamType2 | ParamType3;
 
+// APIから取得するデータの型定義 (入力データ用)
+export interface ApiAttribute {
+    attributeId: number;
+    attribute: string;
+    attributeType: string;
+    attributeJP: string;
+    attributeUnit: string;
+    params: ParamType1[] | ParamType2[] | ParamType3[]; // APIデータではparamが直接含まれる
+    contract: string;
+    public: boolean;
+    masking: boolean;
+    online: boolean;
+    sortOrder: number;
+}
+
+export interface ApiProduct {
+    productId: number;
+    prefix: string;
+    type: string;
+    cfgType: string;
+    attributes: ApiAttribute[];
+    sortOrder: number;
+}
+
 export interface BaseTableTopRow {
     prefix: Product['prefix'];
     type: Product['type'];
@@ -99,6 +123,7 @@ export interface BodyRowProps {
     attribute: Attribute;
     paramDetail: ParamDetail | undefined; // この行に対応するパラメータ (存在しない場合あり)
     rowSpanCount: number; // この属性グループが占める行数
+    paramIndex: number;
     isFirstRowOfAttribute: boolean; // この属性グループ内の最初の行かどうか
 }
 

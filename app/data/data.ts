@@ -13,7 +13,7 @@ export const sample_data: ApiProduct[] = [
                 attributeType: 'string',
                 attributeJP: '属性1',
                 attributeUnit: '',
-                param: [
+                params: [
                     {
                         paramId: 0,
                         code: 'code1',
@@ -41,7 +41,7 @@ export const sample_data: ApiProduct[] = [
                 attributeType: 'string',
                 attributeJP: '属性2',
                 attributeUnit: '',
-                param: [
+                params: [
                     {
                         paramId: 0,
                         min: 1,
@@ -62,7 +62,7 @@ export const sample_data: ApiProduct[] = [
                 attributeType: 'string',
                 attributeJP: '属性2',
                 attributeUnit: '',
-                param: [
+                params: [
                     {
                         paramId: 1,
                         code: 'code',
@@ -92,7 +92,7 @@ export const sample_data: ApiProduct[] = [
                 attributeType: 'string',
                 attributeJP: '属性1',
                 attributeUnit: '',
-                param: [
+                params: [
                     {
                         paramId: 0,
                         code: 'code1',
@@ -120,7 +120,7 @@ export const sample_data: ApiProduct[] = [
                 attributeType: 'string',
                 attributeJP: '属性2',
                 attributeUnit: '',
-                param: [],
+                params: [],
                 contract: '',
                 public: false,
                 masking: true,
@@ -148,7 +148,7 @@ function transformData(apiData: ApiProduct[]): { products: Product[]; paramsList
                 attributeType: apiAttribute.attributeType,
                 attributeJP: apiAttribute.attributeJP,
                 attributeUnit: apiAttribute.attributeUnit,
-                paramHas: apiAttribute.param.length > 0, // param配列が空かどうかでparamHasを決定
+                paramHas: apiAttribute.params.length > 0, // param配列が空かどうかでparamHasを決定
                 contract: apiAttribute.contract,
                 public: apiAttribute.public,
                 masking: apiAttribute.masking,
@@ -158,11 +158,11 @@ function transformData(apiData: ApiProduct[]): { products: Product[]; paramsList
             productAttributes.push(attribute);
 
             // Paramsオブジェクトを作成
-            if (apiAttribute.param.length > 0) {
+            if (apiAttribute.params.length > 0) {
                 const params: Params = {
                     productId: apiProduct.productId,
                     attributeId: apiAttribute.attributeId,
-                    param: apiAttribute.param,
+                    param: apiAttribute.params,
                 };
                 paramsList.push(params);
             }
