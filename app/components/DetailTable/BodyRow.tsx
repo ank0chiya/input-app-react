@@ -28,8 +28,11 @@ const BodyRow: React.FC<BodyRowProps> = ({
     attribute,
     paramDetail,
     rowSpanCount,
+    paramIndex,
     isFirstRowOfAttribute,
 }) => {
+    const isLastParam = rowSpanCount - 1 === paramIndex;
+
     const { handleParamChange, handleAttributeChange } = usePattern();
     // ユニークキー (paramDetailが存在しない場合も考慮)
     const uniqueKey = `${product.productId}-${attribute.attributeId}-${paramDetail?.paramId ?? 'attr-only'}-${isFirstRowOfAttribute ? 'first' : 'other'}`;
@@ -125,7 +128,13 @@ const BodyRow: React.FC<BodyRowProps> = ({
             )}
 
             {/* Action Cell (Replaced with ActionCell component) */}
-            <ActionFieldCells product={product} attribute={attribute} paramDetail={paramDetail} />
+            <ActionFieldCells
+                product={product}
+                attribute={attribute}
+                paramDetail={paramDetail}
+                isFirstParam={isFirstRowOfAttribute}
+                isLastParam={isLastParam}
+            />
         </TableRow>
     );
 };

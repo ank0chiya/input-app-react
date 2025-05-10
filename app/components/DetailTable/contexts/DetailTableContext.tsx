@@ -161,6 +161,55 @@ export function DetailTableProvider({
         [],
     ); // 依存配列は空 (setXXX のコールバック内では常に最新の prevXXX が参照される)
 
+    const paramsDataType = (
+        newParamId: number,
+        contract: string | undefined,
+    ): ParamType1 | ParamType2 | ParamType3 => {
+        if (contract === 'type1') {
+            return {
+                paramId: newParamId,
+                type: 'type1' as const,
+                code: '',
+                dispName: '',
+                sortOrder: -1, // 仮のソート順
+            };
+        } else if (contract === 'type2') {
+            return {
+                paramId: newParamId,
+                type: 'type2' as const,
+                min: 0,
+                increment: 0,
+                sortOrder: -1, // 仮のソート順
+            };
+        } else {
+            return {
+                paramId: newParamId,
+                type: 'type3' as const,
+                code: '',
+                dispName: '',
+                sortOrder: -1, // 仮のソート順
+            };
+        }
+    };
+
+    const getContractValue = (
+        products: Product[],
+        targetProductId: number,
+        targetAttributeId: number,
+    ): string | undefined => {
+        const product = products.find((p) => p.productId === targetProductId);
+
+        if (product) {
+            const attribute = product.attributes.find(
+                (attr) => attr.attributeId === targetAttributeId,
+            );
+            if (attribute) {
+                return attribute.contract;
+            }
+        }
+        return undefined;
+    };
+
     const handleAddParam = useCallback(
         (
             productId: number,
@@ -170,10 +219,8 @@ export function DetailTableProvider({
             const newParamId = Date.now(); // 仮のユニークID
 
             setParamsData((prev) => {
-                let foundAndUpdated = false;
                 const updatedList = prev.map((pl) => {
                     if (pl.productId === productId && pl.attributeId === attributeId) {
-                        foundAndUpdated = true;
                         const currentParams = pl.param;
                         let insertIndex = 0; // デフォルトは先頭
 
@@ -188,15 +235,8 @@ export function DetailTableProvider({
                             insertIndex = currentParams.length; // ここでは末尾に追加する仕様とする
                         }
 
-                        // 新しいParamオブジェクト (sortOrderは後で再割り当てするので仮の値)
-                        const newParam: ParamType1 = {
-                            // Type1を例とする
-                            paramId: newParamId,
-                            type: 'type1',
-                            code: '',
-                            dispName: '',
-                            sortOrder: -1, // 仮のソート順
-                        };
+                        const contract = getContractValue(baseTableData, productId, attributeId);
+                        const newParam = paramsDataType(newParamId, contract);
 
                         // 新しい配列を作成し、計算した位置に挿入
                         let updatedParamArray = [
@@ -209,29 +249,10 @@ export function DetailTableProvider({
                             ...p,
                             sortOrder: index * 10,
                         })); // sortOrder 再割り当て
-                        return { ...pl, param: updatedParamArray as ParamType1[] }; // 型アサーションが必要な場合あり
+                        return { ...pl, param: updatedParamArray as Params['param'] }; // 型アサーションが必要な場合あり
                     }
                     return pl;
                 });
-
-                // 対象の productId-attributeId の組み合わせが prevParamsList になかった場合 (最初のパラメータ追加)
-                if (!foundAndUpdated) {
-                    console.log(`Adding first parameter for ${productId}-${attributeId}`); // Debug log
-                    updatedList.push({
-                        productId,
-                        attributeId,
-                        param: [
-                            {
-                                // sortOrder: 0 で追加
-                                paramId: newParamId,
-                                type: 'type1',
-                                code: '',
-                                dispName: '',
-                                sortOrder: 0,
-                            },
-                        ],
-                    });
-                }
 
                 return updatedList;
             });

@@ -138,6 +138,58 @@ export function AttributeTypeFieldCell({
     );
 }
 
+export function ContractTypeFieldCell({
+    rowSpan,
+    value,
+    columnId,
+    rowIndex,
+    attributeIndex,
+}: {
+    rowSpan: number;
+    value: string;
+    columnId: string;
+    rowIndex: number;
+    attributeIndex: number;
+}) {
+    const { handleAttributeCellChange } = usePattern();
+    const types = ['type1', 'type2', 'None'];
+    const SelectItems = types.map((type) => {
+        if (type === 'None') {
+            return (
+                <MenuItem key={type} value={''}>
+                    {type}
+                </MenuItem>
+            );
+        } else {
+            return (
+                <MenuItem key={type} value={type}>
+                    {type}
+                </MenuItem>
+            );
+        }
+    });
+    return (
+        <TableCell rowSpan={rowSpan}>
+            <FormControl variant="standard" size="small" fullWidth>
+                <Select
+                    value={value}
+                    sx={{ fontSize: '0.875rem' }}
+                    onChange={(e) =>
+                        handleAttributeCellChange(
+                            rowIndex,
+                            attributeIndex,
+                            columnId as keyof Pick<Attribute, 'attributeType'>,
+                            e.target.value,
+                        )
+                    }
+                >
+                    {SelectItems}
+                </Select>
+            </FormControl>
+        </TableCell>
+    );
+}
+
 export function CheckboxCell({
     rowSpan,
     value,
@@ -147,7 +199,7 @@ export function CheckboxCell({
 }: {
     rowSpan: number;
     value: boolean;
-    columnId: keyof Pick<Attribute, 'paramHas' | 'public' | 'masking' >;
+    columnId: keyof Pick<Attribute, 'paramHas' | 'public' | 'masking'>;
     rowIndex: number;
     attributeIndex: number;
 }) {
@@ -161,7 +213,7 @@ export function CheckboxCell({
                     handleAttributeCellChange(
                         rowIndex,
                         attributeIndex,
-                        columnId as keyof Pick<Attribute, 'paramHas' | 'public' | 'masking' >,
+                        columnId as keyof Pick<Attribute, 'paramHas' | 'public' | 'masking'>,
                         e.target.checked,
                     )
                 }

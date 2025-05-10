@@ -7,7 +7,6 @@ import { sample_products, sample_params } from '../data/data'; // サンプル�
 import BaseTable from './BaseTable';
 import DetailTable from './DetailTable';
 import ButtonManager from './ButtonManager';
-// import DetailTable from './DetailTable';
 
 interface TabPanelProps {
     children?: React.ReactNode;

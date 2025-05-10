@@ -9,7 +9,7 @@ import {
     Box,
     type TableCellProps,
 } from '@mui/material';
-import { Attribute, Product, ParamDetail, BodyRowProps } from '@/app/types';
+import { Attribute, Product, ParamDetail } from '@/app/types';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -44,6 +44,8 @@ interface ActionFieldCellProps {
     product: Product;
     attribute: Attribute;
     paramDetail: ParamDetail | null | undefined; // Can be null or undefined
+    isFirstParam: boolean
+    isLastParam: boolean
     // Optional TableCell props like align and sx
     align?: TableCellProps['align'];
     sx?: TableCellProps['sx'];
@@ -180,10 +182,8 @@ export function ActionFieldCells({
     product,
     attribute,
     paramDetail,
-    // handleMoveParamUp,
-    // handleMoveParamDown,
-    // handleAddParam,
-    // handleDeleteParam,
+    isFirstParam,
+    isLastParam,
     align = 'center', // Default align to center
     sx, // sx prop is optional
 }: ActionFieldCellProps) {
@@ -241,7 +241,7 @@ export function ActionFieldCells({
                                     size="small"
                                     color="primary"
                                     onClick={onMoveUpClick}
-                                    // disabled={/* Add condition if needed */}
+                                    disabled={isFirstParam}
                                 >
                                     <ArrowUpwardIcon fontSize="inherit" />
                                 </IconButton>
@@ -253,7 +253,7 @@ export function ActionFieldCells({
                                     size="small"
                                     color="primary"
                                     onClick={onMoveDownClick}
-                                    // disabled={/* Add condition if needed */}
+                                    disabled={isLastParam}
                                 >
                                     <ArrowDownwardIcon fontSize="inherit" />
                                 </IconButton>

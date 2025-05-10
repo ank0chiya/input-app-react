@@ -1,18 +1,10 @@
 // src/components/RowSpanEditableTable.tsx
-import React, { useState, useCallback, useMemo } from 'react';
+import React from 'react';
 import { Table, TableContainer, Paper } from '@mui/material';
 import TableHeader from './DetailTable/Header';
 import DetailTableBody from './DetailTable/Body';
 import { DetailTableProvider } from './DetailTable/contexts/DetailTableContext';
-import type {
-    Product,
-    Attribute,
-    Params,
-    ParamDetail,
-    ParamType1,
-    ParamType2,
-    ParamType3,
-} from '@/app/types'; // 必要な型をインポート
+import type { Product, Params } from '@/app/types'; // 必要な型をインポート
 
 interface BaseTableProps {
     baseTableData: Product[];
@@ -27,16 +19,6 @@ const RowSpanEditableTable: React.FC<BaseTableProps> = ({
     setProductData,
     setParamsData,
 }) => {
-    // paramsList を検索しやすい Map に変換
-    const paramsMap = useMemo(() => {
-        const map = new Map<string, Params>();
-        detailTableData.forEach((p) => {
-            map.set(`${p.productId}-${p.attributeId}`, p);
-        });
-        return map;
-    }, [detailTableData]);
-
-
     return (
         <TableContainer component={Paper}>
             {' '}
@@ -49,16 +31,7 @@ const RowSpanEditableTable: React.FC<BaseTableProps> = ({
                     setProductData={setProductData}
                     setParamsData={setParamsData}
                 >
-                    <DetailTableBody
-                        products={baseTableData}
-                        // paramsMap={paramsMap}
-                        // handleAttributeChange={handleAttributeChange}
-                        // handleParamChange={handleParamChange}
-                        // handleAddParam={handleAddParam}
-                        // handleDeleteParam={handleDeleteParam}
-                        // handleMoveParamUp={handleMoveParamUp}   // 移動ハンドラを渡す
-                        // handleMoveParamDown={handleMoveParamDown} // 移動ハンドラを渡す
-                    />
+                    <DetailTableBody products={baseTableData} />
                 </DetailTableProvider>
             </Table>
         </TableContainer>

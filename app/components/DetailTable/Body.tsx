@@ -31,7 +31,7 @@ const DetailTableBody: React.FC<TableBodyProps> = ({ products }) => {
                             // Array.from でループし、各反復で BodyRow を呼び出す
                             return Array.from({ length: rowSpanCount }).map((_, paramIndex) => {
                                 const paramDetail = params[paramIndex];
-                                const isFirstRowOfAttribute = paramIndex === 0;
+                                const isFirstRowOfParam= paramIndex === 0;
 
                                 // BodyRow に必要な props を渡す
                                 return (
@@ -42,7 +42,8 @@ const DetailTableBody: React.FC<TableBodyProps> = ({ products }) => {
                                         attribute={attribute}
                                         paramDetail={paramDetail}
                                         rowSpanCount={rowSpanCount}
-                                        isFirstRowOfAttribute={isFirstRowOfAttribute}
+                                        paramIndex={paramIndex}
+                                        isFirstRowOfAttribute={isFirstRowOfParam}
                                     />
                                 );
                             });
