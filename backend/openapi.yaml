@@ -1,0 +1,556 @@
+openapi: 3.0.0
+info:
+  title: Sample Product API
+  version: v1.2.1 # バージョンを更新
+  description: API for managing products and attributes. Params are managed via dedicated endpoints. Attribute creation/update does not include params list directly. 'param' field in Attribute renamed to 'params'. Corrected tags for DELETE methods.
+servers:
+  - url: http://localhost:8080/api # Example server URL
+    description: Development server
+    
+tags:
+  - name: Products
+    description: Product related operations
+  - name: Attributes
+    description: Attribute related operations
+  - name: Parameters
+    description: Parameter related operations
+  - name: Utilities
+    description: Utility operations for the mock server
+components:
+  schemas:
+    # --- Base Schemas (primarily for responses or when ID is known) ---
+    ParamBase:
+      type: object
+      properties:
+        paramId:
+          type: integer
+          description: Unique identifier for the parameter.
+          readOnly: true
+        sortOrder:
+          type: integer
+      required:
+        - paramId
+        - sortOrder
+
+    ParamType1Item:
+      allOf:
+        - $ref: "#/components/schemas/ParamBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [type1]
+            code:
+              type: string
+            dispName:
+              type: string
+          required:
+            - type
+            - code
+            - dispName
+
+    ParamType2Item:
+      allOf:
+        - $ref: "#/components/schemas/ParamBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [type2]
+            min:
+              type: integer
+            increment:
+              type: integer
+          required:
+            - type
+            - min
+            - increment
+
+    ParamType3Item:
+      allOf:
+        - $ref: "#/components/schemas/ParamBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [type3]
+            code:
+              type: string
+            dispName:
+              type: string
+          required:
+            - type
+            - code
+            - dispName
+
+    ParamItem: # For GET responses primarily
+      oneOf:
+        - $ref: "#/components/schemas/ParamType1Item"
+        - $ref: "#/components/schemas/ParamType2Item"
+        - $ref: "#/components/schemas/ParamType3Item"
+      discriminator:
+        propertyName: type
+        mapping:
+          type1: "#/components/schemas/ParamType1Item"
+          type2: "#/components/schemas/ParamType2Item"
+          type3: "#/components/schemas/ParamType3Item"
+
+    Attribute: # For GET responses primarily
+      type: object
+      properties:
+        attributeId:
+          type: integer
+          readOnly: true
+        attribute:
+          type: string
+        attributeType:
+          type: string
+        attributeJP:
+          type: string
+        attributeUnit:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParamItem"
+          description: List of parameters. Managed via /params endpoint. Included in GET, empty on new attribute creation.
+        contract:
+          type: string
+        public:
+          type: boolean
+        masking:
+          type: boolean
+        online:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+        - attributeId
+        - attribute
+        - attributeType
+        - attributeJP
+        - attributeUnit
+        - params
+        - contract
+        - public
+        - masking
+        - online
+        - sortOrder
+
+    Product: # For GET responses primarily
+      type: object
+      properties:
+        productId:
+          type: integer
+          readOnly: true
+        prefix:
+          type: string
+        type:
+          type: string
+        cfgType:
+          type: string
+        attributes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attribute"
+        sortOrder:
+          type: integer
+      required:
+        - productId
+        - prefix
+        - type
+        - cfgType
+        - attributes
+        - sortOrder
+
+    # --- Input Schemas (for POST/PUT request bodies) ---
+    ParamBaseInput:
+      type: object
+      properties:
+        sortOrder:
+          type: integer
+      required:
+        - sortOrder
+
+    ParamType1ItemInput:
+      allOf:
+        - $ref: "#/components/schemas/ParamBaseInput"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [type1]
+            code:
+              type: string
+            dispName:
+              type: string
+          required:
+            - type
+            - code
+            - dispName
+
+    ParamType2ItemInput:
+      allOf:
+        - $ref: "#/components/schemas/ParamBaseInput"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [type2]
+            min:
+              type: integer
+            increment:
+              type: integer
+          required:
+            - type
+            - min
+            - increment
+
+    ParamType3ItemInput:
+      allOf:
+        - $ref: "#/components/schemas/ParamBaseInput"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [type3]
+            code:
+              type: string
+            dispName:
+              type: string
+          required:
+            - type
+            - code
+            - dispName
+
+    ParamItemInput: # For POST/PUT request bodies for Parameters
+      oneOf:
+        - $ref: "#/components/schemas/ParamType1ItemInput"
+        - $ref: "#/components/schemas/ParamType2ItemInput"
+        - $ref: "#/components/schemas/ParamType3ItemInput"
+      discriminator:
+        propertyName: type
+        mapping:
+          type1: "#/components/schemas/ParamType1ItemInput"
+          type2: "#/components/schemas/ParamType2ItemInput"
+          type3: "#/components/schemas/ParamType3ItemInput"
+
+    AttributeInput: # For POST/PUT request bodies for Attributes
+      type: object
+      properties:
+        attribute:
+          type: string
+        attributeType:
+          type: string
+        attributeJP:
+          type: string
+        attributeUnit:
+          type: string
+        contract:
+          type: string
+        public:
+          type: boolean
+        masking:
+          type: boolean
+        online:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+        - attribute
+        - attributeType
+        - attributeJP
+        - attributeUnit
+        - contract
+        - public
+        - masking
+        - online
+        - sortOrder
+
+    # --- Error Schema ---
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+      required:
+        - message
+
+  parameters:
+    ProductIdParameter:
+      name: productId
+      in: path
+      required: true
+      schema:
+        type: integer
+    AttributeIdParameter:
+      name: attributeId
+      in: path
+      required: true
+      schema:
+        type: integer
+    ParamIdParameter:
+      name: paramId
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    BadRequest:
+      description: The request was malformed or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalServerError:
+      description: An unexpected error occurred on the server.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+paths:
+  /products:
+    get:
+      summary: List all products
+      operationId: listProducts
+      tags:
+        - Products
+      responses:
+        "200":
+          description: A list of all products.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/{productId}:
+    get:
+      summary: Get a specific product by its ID
+      operationId: getProductById
+      tags:
+        - Products
+      parameters:
+        - $ref: "#/components/parameters/ProductIdParameter"
+      responses:
+        "200":
+          description: The requested product.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/{productId}/attributes:
+    post:
+      summary: Add a new attribute to a specific product (without params)
+      operationId: addAttribute
+      tags:
+        - Attributes
+      parameters:
+        - $ref: "#/components/parameters/ProductIdParameter"
+      requestBody:
+        description: The attribute to add. `attributeId` and `params` list are server-managed and should not be provided.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttributeInput"
+      responses:
+        "201":
+          description: Attribute created successfully. Returns the created attribute (params will be an empty array initially).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attribute"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Product not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/{productId}/attributes/{attributeId}:
+    put:
+      summary: Update an existing attribute of a specific product (without managing params list directly)
+      operationId: updateAttribute
+      tags:
+        - Attributes
+      parameters:
+        - $ref: "#/components/parameters/ProductIdParameter"
+        - $ref: "#/components/parameters/AttributeIdParameter"
+      requestBody:
+        description: The updated attribute data. `attributeId` is from the path. `params` list is not modified by this endpoint.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttributeInput"
+      responses:
+        "200":
+          description: Attribute updated successfully. Returns the updated attribute (params list reflects current state, not directly changed by this PUT).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attribute"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Product or Attribute not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      summary: Delete a specific attribute from a product
+      operationId: deleteAttribute
+      tags: # MODIFIED: Added/Ensured tags
+        - Attributes
+      parameters:
+        - $ref: "#/components/parameters/ProductIdParameter"
+        - $ref: "#/components/parameters/AttributeIdParameter"
+      responses:
+        "204":
+          description: Attribute deleted successfully.
+        "404":
+          description: Product or Attribute not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/{productId}/attributes/{attributeId}/params:
+    post:
+      summary: Add a new parameter to a specific attribute
+      operationId: addParam
+      tags:
+        - Parameters
+      parameters:
+        - $ref: "#/components/parameters/ProductIdParameter"
+        - $ref: "#/components/parameters/AttributeIdParameter"
+      requestBody:
+        description: The parameter to add. `paramId` will be assigned by the server.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParamItemInput"
+      responses:
+        "201":
+          description: Parameter created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParamItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Product or Attribute not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/{productId}/attributes/{attributeId}/params/{paramId}:
+    put:
+      summary: Update an existing parameter of a specific attribute
+      operationId: updateParam
+      tags:
+        - Parameters
+      parameters:
+        - $ref: "#/components/parameters/ProductIdParameter"
+        - $ref: "#/components/parameters/AttributeIdParameter"
+        - $ref: "#/components/parameters/ParamIdParameter"
+      requestBody:
+        description: The updated parameter data. `paramId` is from the path.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParamItemInput"
+      responses:
+        "200":
+          description: Parameter updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParamItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Product, Attribute, or Parameter not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      summary: Delete a specific parameter from an attribute
+      operationId: deleteParam
+      tags: # MODIFIED: Added/Ensured tags
+        - Parameters
+      parameters:
+        - $ref: "#/components/parameters/ProductIdParameter"
+        - $ref: "#/components/parameters/AttributeIdParameter"
+        - $ref: "#/components/parameters/ParamIdParameter"
+      responses:
+        "204":
+          description: Parameter deleted successfully.
+        "404":
+          description: Product, Attribute, or Parameter not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /refresh:
+    post:
+      summary: Reset all mock data to its initial state
+      operationId: refreshMockData
+      tags:
+        - Utilities # または MockControl, Admin など、適切なタググループ
+      responses:
+        "200":
+          description: Mock data has been successfully reset.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Mock data has been reset to the initial state.
+        "500":
+          description: Internal server error occurred during data reset.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error" # 既存のErrorスキーマを参照

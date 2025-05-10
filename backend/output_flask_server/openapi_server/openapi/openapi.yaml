@@ -1,0 +1,842 @@
+openapi: 3.0.0
+info:
+  description: API for managing products and attributes. Params are managed via dedicated
+    endpoints. Attribute creation/update does not include params list directly. 'param'
+    field in Attribute renamed to 'params'. Corrected tags for DELETE methods.
+  title: Sample Product API
+  version: v1.2.1
+servers:
+- description: Development server
+  url: http://localhost:8080/api
+tags:
+- description: Product related operations
+  name: Products
+- description: Attribute related operations
+  name: Attributes
+- description: Parameter related operations
+  name: Parameters
+- description: Utility operations for the mock server
+  name: Utilities
+paths:
+  /products:
+    get:
+      operationId: list_products
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Product'
+                type: array
+          description: A list of all products.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: List all products
+      tags:
+      - Products
+      x-openapi-router-controller: openapi_server.controllers.products_controller
+  /products/{productId}:
+    get:
+      operationId: get_product_by_id
+      parameters:
+      - explode: false
+        in: path
+        name: productId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: The requested product.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The specified resource was not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: Get a specific product by its ID
+      tags:
+      - Products
+      x-openapi-router-controller: openapi_server.controllers.products_controller
+  /products/{productId}/attributes:
+    post:
+      operationId: add_attribute
+      parameters:
+      - explode: false
+        in: path
+        name: productId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributeInput'
+        description: The attribute to add. `attributeId` and `params` list are server-managed
+          and should not be provided.
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attribute'
+          description: Attribute created successfully. Returns the created attribute
+            (params will be an empty array initially).
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The request was malformed or invalid.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: Add a new attribute to a specific product (without params)
+      tags:
+      - Attributes
+      x-openapi-router-controller: openapi_server.controllers.attributes_controller
+  /products/{productId}/attributes/{attributeId}:
+    delete:
+      operationId: delete_attribute
+      parameters:
+      - explode: false
+        in: path
+        name: productId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: attributeId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Attribute deleted successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product or Attribute not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: Delete a specific attribute from a product
+      tags:
+      - Attributes
+      x-openapi-router-controller: openapi_server.controllers.attributes_controller
+    put:
+      operationId: update_attribute
+      parameters:
+      - explode: false
+        in: path
+        name: productId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: attributeId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributeInput'
+        description: The updated attribute data. `attributeId` is from the path. `params`
+          list is not modified by this endpoint.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attribute'
+          description: "Attribute updated successfully. Returns the updated attribute\
+            \ (params list reflects current state, not directly changed by this PUT)."
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The request was malformed or invalid.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product or Attribute not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: Update an existing attribute of a specific product (without managing
+        params list directly)
+      tags:
+      - Attributes
+      x-openapi-router-controller: openapi_server.controllers.attributes_controller
+  /products/{productId}/attributes/{attributeId}/params:
+    post:
+      operationId: add_param
+      parameters:
+      - explode: false
+        in: path
+        name: productId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: attributeId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamItemInput'
+        description: The parameter to add. `paramId` will be assigned by the server.
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParamItem'
+          description: Parameter created successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The request was malformed or invalid.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product or Attribute not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: Add a new parameter to a specific attribute
+      tags:
+      - Parameters
+      x-openapi-router-controller: openapi_server.controllers.parameters_controller
+  /products/{productId}/attributes/{attributeId}/params/{paramId}:
+    delete:
+      operationId: delete_param
+      parameters:
+      - explode: false
+        in: path
+        name: productId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: attributeId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: paramId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Parameter deleted successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: "Product, Attribute, or Parameter not found."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: Delete a specific parameter from an attribute
+      tags:
+      - Parameters
+      x-openapi-router-controller: openapi_server.controllers.parameters_controller
+    put:
+      operationId: update_param
+      parameters:
+      - explode: false
+        in: path
+        name: productId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: attributeId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: paramId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamItemInput'
+        description: The updated parameter data. `paramId` is from the path.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParamItem'
+          description: Parameter updated successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The request was malformed or invalid.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: "Product, Attribute, or Parameter not found."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: An unexpected error occurred on the server.
+      summary: Update an existing parameter of a specific attribute
+      tags:
+      - Parameters
+      x-openapi-router-controller: openapi_server.controllers.parameters_controller
+  /refresh:
+    post:
+      operationId: refresh_mock_data
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/refreshMockData_200_response'
+          description: Mock data has been successfully reset.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Internal server error occurred during data reset.
+      summary: Reset all mock data to its initial state
+      tags:
+      - Utilities
+      x-openapi-router-controller: openapi_server.controllers.utilities_controller
+components:
+  parameters:
+    ProductIdParameter:
+      explode: false
+      in: path
+      name: productId
+      required: true
+      schema:
+        type: integer
+      style: simple
+    AttributeIdParameter:
+      explode: false
+      in: path
+      name: attributeId
+      required: true
+      schema:
+        type: integer
+      style: simple
+    ParamIdParameter:
+      explode: false
+      in: path
+      name: paramId
+      required: true
+      schema:
+        type: integer
+      style: simple
+  responses:
+    NotFound:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: The specified resource was not found.
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: The request was malformed or invalid.
+    InternalServerError:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: An unexpected error occurred on the server.
+  schemas:
+    ParamBase:
+      properties:
+        paramId:
+          description: Unique identifier for the parameter.
+          readOnly: true
+          title: paramId
+          type: integer
+        sortOrder:
+          title: sortOrder
+          type: integer
+      required:
+      - paramId
+      - sortOrder
+      title: ParamBase
+      type: object
+    ParamType1Item:
+      allOf:
+      - $ref: '#/components/schemas/ParamBase'
+      - properties:
+          type:
+            enum:
+            - type1
+            type: string
+          code:
+            type: string
+          dispName:
+            type: string
+        required:
+        - code
+        - dispName
+        - type
+        type: object
+      example:
+        code: code
+        sortOrder: 5
+        paramId: 1
+        type: type1
+        dispName: dispName
+      title: ParamType1Item
+    ParamType2Item:
+      allOf:
+      - $ref: '#/components/schemas/ParamBase'
+      - properties:
+          type:
+            enum:
+            - type2
+            type: string
+          min:
+            type: integer
+          increment:
+            type: integer
+        required:
+        - increment
+        - min
+        - type
+        type: object
+      title: ParamType2Item
+    ParamType3Item:
+      allOf:
+      - $ref: '#/components/schemas/ParamBase'
+      - properties:
+          type:
+            enum:
+            - type3
+            type: string
+          code:
+            type: string
+          dispName:
+            type: string
+        required:
+        - code
+        - dispName
+        - type
+        type: object
+      title: ParamType3Item
+    ParamItem:
+      discriminator:
+        mapping:
+          type1: '#/components/schemas/ParamType1Item'
+          type2: '#/components/schemas/ParamType2Item'
+          type3: '#/components/schemas/ParamType3Item'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/ParamType1Item'
+      - $ref: '#/components/schemas/ParamType2Item'
+      - $ref: '#/components/schemas/ParamType3Item'
+      title: ParamItem
+    Attribute:
+      example:
+        attributeId: 6
+        attributeUnit: attributeUnit
+        masking: true
+        public: true
+        attributeJP: attributeJP
+        attributeType: attributeType
+        contract: contract
+        sortOrder: 5
+        online: true
+        attribute: attribute
+        params:
+        - code: code
+          sortOrder: 5
+          paramId: 1
+          type: type1
+          dispName: dispName
+        - code: code
+          sortOrder: 5
+          paramId: 1
+          type: type1
+          dispName: dispName
+      properties:
+        attributeId:
+          readOnly: true
+          title: attributeId
+          type: integer
+        attribute:
+          title: attribute
+          type: string
+        attributeType:
+          title: attributeType
+          type: string
+        attributeJP:
+          title: attributeJP
+          type: string
+        attributeUnit:
+          title: attributeUnit
+          type: string
+        params:
+          description: "List of parameters. Managed via /params endpoint. Included\
+            \ in GET, empty on new attribute creation."
+          items:
+            $ref: '#/components/schemas/ParamItem'
+          title: params
+          type: array
+        contract:
+          title: contract
+          type: string
+        public:
+          title: public
+          type: boolean
+        masking:
+          title: masking
+          type: boolean
+        online:
+          title: online
+          type: boolean
+        sortOrder:
+          title: sortOrder
+          type: integer
+      required:
+      - attribute
+      - attributeId
+      - attributeJP
+      - attributeType
+      - attributeUnit
+      - contract
+      - masking
+      - online
+      - params
+      - public
+      - sortOrder
+      title: Attribute
+      type: object
+    Product:
+      example:
+        productId: 0
+        cfgType: cfgType
+        prefix: prefix
+        sortOrder: 2
+        attributes:
+        - attributeId: 6
+          attributeUnit: attributeUnit
+          masking: true
+          public: true
+          attributeJP: attributeJP
+          attributeType: attributeType
+          contract: contract
+          sortOrder: 5
+          online: true
+          attribute: attribute
+          params:
+          - code: code
+            sortOrder: 5
+            paramId: 1
+            type: type1
+            dispName: dispName
+          - code: code
+            sortOrder: 5
+            paramId: 1
+            type: type1
+            dispName: dispName
+        - attributeId: 6
+          attributeUnit: attributeUnit
+          masking: true
+          public: true
+          attributeJP: attributeJP
+          attributeType: attributeType
+          contract: contract
+          sortOrder: 5
+          online: true
+          attribute: attribute
+          params:
+          - code: code
+            sortOrder: 5
+            paramId: 1
+            type: type1
+            dispName: dispName
+          - code: code
+            sortOrder: 5
+            paramId: 1
+            type: type1
+            dispName: dispName
+        type: type
+      properties:
+        productId:
+          readOnly: true
+          title: productId
+          type: integer
+        prefix:
+          title: prefix
+          type: string
+        type:
+          title: type
+          type: string
+        cfgType:
+          title: cfgType
+          type: string
+        attributes:
+          items:
+            $ref: '#/components/schemas/Attribute'
+          title: attributes
+          type: array
+        sortOrder:
+          title: sortOrder
+          type: integer
+      required:
+      - attributes
+      - cfgType
+      - prefix
+      - productId
+      - sortOrder
+      - type
+      title: Product
+      type: object
+    ParamBaseInput:
+      properties:
+        sortOrder:
+          title: sortOrder
+          type: integer
+      required:
+      - sortOrder
+      title: ParamBaseInput
+      type: object
+    ParamType1ItemInput:
+      allOf:
+      - $ref: '#/components/schemas/ParamBaseInput'
+      - properties:
+          type:
+            enum:
+            - type1
+            type: string
+          code:
+            type: string
+          dispName:
+            type: string
+        required:
+        - code
+        - dispName
+        - type
+        type: object
+      example:
+        code: code
+        sortOrder: 0
+        type: type1
+        dispName: dispName
+      title: ParamType1ItemInput
+    ParamType2ItemInput:
+      allOf:
+      - $ref: '#/components/schemas/ParamBaseInput'
+      - properties:
+          type:
+            enum:
+            - type2
+            type: string
+          min:
+            type: integer
+          increment:
+            type: integer
+        required:
+        - increment
+        - min
+        - type
+        type: object
+      title: ParamType2ItemInput
+    ParamType3ItemInput:
+      allOf:
+      - $ref: '#/components/schemas/ParamBaseInput'
+      - properties:
+          type:
+            enum:
+            - type3
+            type: string
+          code:
+            type: string
+          dispName:
+            type: string
+        required:
+        - code
+        - dispName
+        - type
+        type: object
+      title: ParamType3ItemInput
+    ParamItemInput:
+      discriminator:
+        mapping:
+          type1: '#/components/schemas/ParamType1ItemInput'
+          type2: '#/components/schemas/ParamType2ItemInput'
+          type3: '#/components/schemas/ParamType3ItemInput'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/ParamType1ItemInput'
+      - $ref: '#/components/schemas/ParamType2ItemInput'
+      - $ref: '#/components/schemas/ParamType3ItemInput'
+      title: ParamItemInput
+    AttributeInput:
+      example:
+        attributeUnit: attributeUnit
+        masking: true
+        public: true
+        attributeJP: attributeJP
+        attributeType: attributeType
+        contract: contract
+        sortOrder: 0
+        online: true
+        attribute: attribute
+      properties:
+        attribute:
+          title: attribute
+          type: string
+        attributeType:
+          title: attributeType
+          type: string
+        attributeJP:
+          title: attributeJP
+          type: string
+        attributeUnit:
+          title: attributeUnit
+          type: string
+        contract:
+          title: contract
+          type: string
+        public:
+          title: public
+          type: boolean
+        masking:
+          title: masking
+          type: boolean
+        online:
+          title: online
+          type: boolean
+        sortOrder:
+          title: sortOrder
+          type: integer
+      required:
+      - attribute
+      - attributeJP
+      - attributeType
+      - attributeUnit
+      - contract
+      - masking
+      - online
+      - public
+      - sortOrder
+      title: AttributeInput
+      type: object
+    Error:
+      example:
+        code: code
+        message: message
+      properties:
+        message:
+          title: message
+          type: string
+        code:
+          title: code
+          type: string
+      required:
+      - message
+      title: Error
+      type: object
+    refreshMockData_200_response:
+      example:
+        message: Mock data has been reset to the initial state.
+      properties:
+        message:
+          example: Mock data has been reset to the initial state.
+          title: message
+          type: string
+      title: refreshMockData_200_response
+      type: object
