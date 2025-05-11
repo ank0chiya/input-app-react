@@ -1,9 +1,25 @@
-import { Attribute, Param, Params, Product, ParamType1, ParamType2, ParamType3 } from '@/app/types';
+import {
+    Attribute,
+    Params,
+    Product,
+    ParamType1,
+    ParamType2,
+    ParamType3,
+    ChangeStatus,
+    ParamDetail,
+} from '@/app/types';
 import React, { createContext, useContext, useCallback, useMemo } from 'react';
+
+// 仮ID生成用カウンター (Contextファイルスコープ)
+let tempParamIdCounterDetailCtx = -1;
 
 interface DetailTableContextType {
     tableData: Product[];
     paramsMap: Map<string, Params>;
+    // 変更追跡と保存用
+    isParamsDirtyForAttribute: (productId: number, attributeId: number) => boolean;
+
+    // ParamItem操作ハンドラ (ローカルでの変更と_status設定)
     handleTestContext: (num1: number, num2: number) => void;
     handleAttributeChange: (
         productId: number,
@@ -15,7 +31,7 @@ interface DetailTableContextType {
         productId: number,
         attributeId: number,
         paramId: number,
-        field: keyof ParamType1 | keyof ParamType2 | keyof ParamType3, // ← 型を更新
+        field: keyof ParamDetail,
         value: any,
     ) => void;
     handleAddParam: (
@@ -77,89 +93,223 @@ export function DetailTableProvider({
         [],
     );
 
+    // --- 変更追跡とParams操作のためのヘルパー ---
+    const getActiveParamsEntry = useCallback(
+        (productId: number, attributeId: number) => paramsMap.get(`${productId}-${attributeId}`),
+        [paramsMap],
+    );
+
+    const isParamsDirtyForAttribute = useCallback(
+        (productId: number, attributeId: number): boolean => {
+            const entry = getActiveParamsEntry(productId, attributeId);
+            return !!entry?.param.some((item) => item._status && item._status !== 'synced');
+        },
+        [getActiveParamsEntry],
+    );
+
+    const getAttributeContract = useCallback(
+        (productId: number, attributeId: number) =>
+            baseTableData
+                .find((p) => p.productId === productId)
+                ?.attributes.find((a) => a.attributeId === attributeId)?.contract,
+        [baseTableData],
+    );
+
+    const getExpectedParamType = useCallback(
+        (contract?: string): 'type1' | 'type2' | 'type3' =>
+            contract === 'type1' ? 'type1' : contract === 'type2' ? 'type2' : 'type3',
+        [],
+    );
+
+    // 新しいParamItemオブジェクトを作成する内部関数 (ユーザー提供のparamsDataTypeをベースに)
+    const createNewParamItemInternal = useCallback(
+        (paramId: number, contract: string | undefined, sortOrder: number): ParamDetail => {
+            const type = getExpectedParamType(contract);
+            switch (type) {
+                case 'type1':
+                    return { paramId, type, code: '', dispName: '', sortOrder, _status: 'new' };
+                case 'type2':
+                    return { paramId, type, min: 0, increment: 0, sortOrder, _status: 'new' };
+                case 'type3':
+                default:
+                    return { paramId, type, code: '', dispName: '', sortOrder, _status: 'new' };
+            }
+        },
+        [getExpectedParamType],
+    );
+
+    const handleAddParam = useCallback(
+        (productId: number, attributeId: number, afterParamId?: number) => {
+            const newParamId = tempParamIdCounterDetailCtx--;
+            const contract = getAttributeContract(productId, attributeId);
+            
+            setParamsData((prevList) =>
+                prevList.map((pl) => {
+                    console.log(baseTableData)
+                    if (pl.productId === productId && pl.attributeId === attributeId) {
+                        const currentParamArray = pl.param || [];
+                        let insertIndex = currentParamArray.length;
+                        if (afterParamId !== undefined) {
+                            const targetIdx = currentParamArray.findIndex(
+                                (p) => p.paramId === afterParamId,
+                            );
+                            if (targetIdx !== -1) insertIndex = targetIdx + 1;
+                        }
+                        const tempSortOrder =
+                            insertIndex > 0 && currentParamArray[insertIndex - 1]
+                                ? currentParamArray[insertIndex - 1].sortOrder + 0.5
+                                : (currentParamArray[0]?.sortOrder || 0) - 0.5;
+                        const newParam = createNewParamItemInternal(
+                            newParamId,
+                            contract,
+                            tempSortOrder,
+                        );
+                        let newParamList = [
+                            ...currentParamArray.slice(0, insertIndex),
+                            newParam,
+                            ...currentParamArray.slice(insertIndex),
+                        ];
+                        newParamList
+                            .sort((a, b) => a.sortOrder - b.sortOrder)
+                            .forEach((item, idx) => (item.sortOrder = idx));
+                        return {
+                            ...pl,
+                            param: newParamList as ParamType1[] | ParamType2[] | ParamType3[],
+                        };
+                    }
+                    console.log('contract', contract)
+                    return pl;
+                }),
+            );
+        },
+        [setParamsData, getAttributeContract, createNewParamItemInternal],
+    );
+
+    const handleDeleteParam = useCallback(
+        (productId: number, attributeId: number, paramId: number) => {
+            setParamsData((prevList) =>
+                prevList.map((pl) => {
+                    if (pl.productId === productId && pl.attributeId === attributeId) {
+                        const paramToDelete = (pl.param || []).find((p) => p.paramId === paramId);
+                        if (!paramToDelete) return pl;
+                        let newParamList;
+                        if (paramToDelete._status === 'new') {
+                            newParamList = pl.param.filter((p) => p.paramId !== paramId);
+                        } else {
+                            newParamList = pl.param.map((p) =>
+                                p.paramId === paramId
+                                    ? { ...p, _status: 'deleted' as ChangeStatus }
+                                    : p,
+                            );
+                        }
+                        const activeItems = newParamList.filter((p) => p._status !== 'deleted');
+                        activeItems
+                            .sort((a, b) => a.sortOrder - b.sortOrder)
+                            .forEach((p, idx) => (p.sortOrder = idx));
+                        const finalParamList = newParamList
+                            .map((originalParam) =>
+                                originalParam.paramId === paramToDelete.paramId &&
+                                paramToDelete._status !== 'new'
+                                    ? { ...originalParam, _status: 'deleted' as ChangeStatus }
+                                    : activeItems.find(
+                                          (a) => a.paramId === originalParam.paramId,
+                                      ) || originalParam,
+                            )
+                            .filter(
+                                (p) =>
+                                    !(
+                                        p.paramId === paramToDelete.paramId &&
+                                        paramToDelete._status === 'new'
+                                    ),
+                            );
+                        return {
+                            ...pl,
+                            param: finalParamList as ParamType1[] | ParamType2[] | ParamType3[],
+                        };
+                    }
+                    return pl;
+                }),
+            );
+        },
+        [setParamsData],
+    );
+
     const handleParamChange = useCallback(
         (
             productId: number,
             attributeId: number,
             paramId: number,
-            field: keyof ParamType1 | keyof ParamType2 | keyof ParamType3, // ← 型を更新
+            field: keyof ParamDetail,
             value: any,
         ) => {
-            setParamsData((prev): Params[] => {
-                // set 関数が Params[] を受け取ることを明示
-                return prev.map((pl): Params => {
-                    // map の結果が Params であることを明示
-                    // 更新対象でない場合はそのまま返す
-                    if (!(pl.productId === productId && pl.attributeId === attributeId)) {
-                        return pl;
+            setParamsData((prevList) =>
+                prevList.map((pl) => {
+                    if (pl.productId === productId && pl.attributeId === attributeId) {
+                        return {
+                            ...pl,
+                            param: (pl.param || []).map((p) =>
+                                p.paramId === paramId
+                                    ? {
+                                          ...p,
+                                          [field]: value,
+                                          _status:
+                                              p._status === 'new'
+                                                  ? 'new'
+                                                  : ('updated' as ChangeStatus),
+                                      }
+                                    : p,
+                            ) as ParamType1[] | ParamType2[] | ParamType3[],
+                        };
                     }
-
-                    // --- 更新対象の Params オブジェクト (pl) ---
-
-                    // 1. 元の param 配列 (pl.param) がどの具体的な型か特定する
-                    //    空配列でない限り、最初の要素の型で代表できる（混在しない前提のため）
-                    let originalParamArrayType: 'type1' | 'type2' | 'type3' | 'empty' = 'empty';
-                    if (pl.param.length > 0) {
-                        // 最初の要素の型を取得 (Type Guard を使うとより安全)
-                        const firstParamType = pl.param[0].type;
-                        if (
-                            firstParamType === 'type1' ||
-                            firstParamType === 'type2' ||
-                            firstParamType === 'type3'
-                        ) {
-                            originalParamArrayType = firstParamType;
-                        } else {
-                            // 予期しない型の場合 (エラーハンドリングが必要な場合あり)
-                            console.error('Unknown param type detected in array:', pl.param[0]);
-                            // この場合は更新せずに元の pl を返すなど、エラー処理が必要
-                            return pl;
-                        }
-                    }
-
-                    // 2. param 配列を map で更新する
-                    //    この時点では updatedParamArray の型はまだ ParamDetail[] と推論される
-                    const updatedParamArray = pl.param.map((pd) => {
-                        if (pd.paramId === paramId) {
-                            const updatedPd = { ...pd };
-                            // any キャストを用いてフィールドを更新
-                            // field の型チェックは呼び出し元と引数の型定義で行われている前提
-                            (updatedPd as any)[field] = value;
-                            return updatedPd;
-                        }
-                        return pd;
-                    });
-
-                    // 3. 更新後の配列を、特定した元の型に型アサーションする
-                    let typedUpdatedParamArray: ParamType1[] | ParamType2[] | ParamType3[];
-
-                    switch (originalParamArrayType) {
-                        case 'type1':
-                            // この配列は ParamType1 の要素のみで構成されているはず、と TypeScript に伝える
-                            typedUpdatedParamArray = updatedParamArray as ParamType1[];
-                            break;
-                        case 'type2':
-                            typedUpdatedParamArray = updatedParamArray as ParamType2[];
-                            break;
-                        case 'type3':
-                            typedUpdatedParamArray = updatedParamArray as ParamType3[];
-                            break;
-                        case 'empty':
-                        default:
-                            // 元が空配列だった場合、更新後も空配列のはず
-                            // (もし要素を追加するロジックなら別途考慮が必要)
-                            // 空配列はどの型にも割り当て可能なので、ここでは空配列を返す
-                            typedUpdatedParamArray = [];
-                            break;
-                    }
-
-                    // 4. 型アサーション済みの配列を使って Params オブジェクトを返す
-                    //    これで { ...pl, param: typedUpdatedParamArray } の型が Params と一致する
-                    return { ...pl, param: typedUpdatedParamArray };
-                });
-            });
+                    return pl;
+                }),
+            );
         },
-        [],
-    ); // 依存配列は空 (setXXX のコールバック内では常に最新の prevXXX が参照される)
+        [setParamsData],
+    );
+
+    const moveParam = useCallback(
+        (productId: number, attributeId: number, paramId: number, direction: 'up' | 'down') => {
+            setParamsData((prevList) =>
+                prevList.map((pl) => {
+                    if (pl.productId === productId && pl.attributeId === attributeId) {
+                        const params = [...(pl.param || [])];
+                        const currentIndex = params.findIndex((p) => p.paramId === paramId);
+                        if (currentIndex === -1) return pl;
+                        const targetIndex =
+                            direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+                        if (targetIndex < 0 || targetIndex >= params.length) return pl;
+                        [params[currentIndex], params[targetIndex]] = [
+                            params[targetIndex],
+                            params[currentIndex],
+                        ];
+                        const newParamList = params.map((p, index) => {
+                            const isMoved =
+                                p.paramId === paramId ||
+                                p.paramId ===
+                                    (direction === 'up'
+                                        ? params[currentIndex]?.paramId
+                                        : params[currentIndex]?.paramId);
+                            return {
+                                ...p,
+                                sortOrder: index,
+                                _status:
+                                    isMoved && p._status !== 'new'
+                                        ? ('updated' as ChangeStatus)
+                                        : p._status,
+                            };
+                        });
+                        return {
+                            ...pl,
+                            param: newParamList as ParamType1[] | ParamType2[] | ParamType3[],
+                        };
+                    }
+                    return pl;
+                }),
+            );
+        },
+        [setParamsData],
+    );
 
     const paramsDataType = (
         newParamId: number,
@@ -192,6 +342,15 @@ export function DetailTableProvider({
         }
     };
 
+    const handleMoveParamUp = useCallback(
+        (pId, aId, paramId) => moveParam(pId, aId, paramId, 'up'),
+        [moveParam],
+    );
+    const handleMoveParamDown = useCallback(
+        (pId, aId, paramId) => moveParam(pId, aId, paramId, 'down'),
+        [moveParam],
+    );
+
     const getContractValue = (
         products: Product[],
         targetProductId: number,
@@ -210,160 +369,17 @@ export function DetailTableProvider({
         return undefined;
     };
 
-    const handleAddParam = useCallback(
-        (
-            productId: number,
-            attributeId: number,
-            afterParamId?: number, // どの Param の後に追加するか (undefined なら先頭 or 末尾)
-        ) => {
-            const newParamId = Date.now(); // 仮のユニークID
-
-            setParamsData((prev) => {
-                const updatedList = prev.map((pl) => {
-                    if (pl.productId === productId && pl.attributeId === attributeId) {
-                        const currentParams = pl.param;
-                        let insertIndex = 0; // デフォルトは先頭
-
-                        if (afterParamId !== undefined) {
-                            const targetIndex = currentParams.findIndex(
-                                (p) => p.paramId === afterParamId,
-                            );
-                            insertIndex =
-                                targetIndex !== -1 ? targetIndex + 1 : currentParams.length;
-                        } else {
-                            // afterParamId がなく、既に要素がある場合は末尾に追加 (あるいは要件に応じて先頭 insertIndex=0 のまま)
-                            insertIndex = currentParams.length; // ここでは末尾に追加する仕様とする
-                        }
-
-                        const contract = getContractValue(baseTableData, productId, attributeId);
-                        const newParam = paramsDataType(newParamId, contract);
-
-                        // 新しい配列を作成し、計算した位置に挿入
-                        let updatedParamArray = [
-                            ...currentParams.slice(0, insertIndex),
-                            newParam,
-                            ...currentParams.slice(insertIndex),
-                        ];
-
-                        updatedParamArray = updatedParamArray.map((p, index) => ({
-                            ...p,
-                            sortOrder: index * 10,
-                        })); // sortOrder 再割り当て
-                        return { ...pl, param: updatedParamArray as Params['param'] }; // 型アサーションが必要な場合あり
-                    }
-                    return pl;
-                });
-
-                return updatedList;
-            });
-            // paramHas を true にする処理 (前回の回答と同様)
-            const targetProduct = baseTableData.find((p) => p.productId === productId);
-            const targetAttribute = targetProduct?.attributes.find(
-                (a) => a.attributeId === attributeId,
-            );
-            if (targetAttribute && !targetAttribute.paramHas) {
-                handleAttributeChange(productId, attributeId, 'paramHas', true);
-            }
-        },
-        [baseTableData, handleAttributeChange],
-    );
-
-    // --- Param削除ハンドラ ---
-    const handleDeleteParam = useCallback(
-        (productId: number, attributeId: number, paramId: number) => {
-            setParamsData((prev) => {
-                const nextList = prev.map((pl) => {
-                    if (pl.productId === productId && pl.attributeId === attributeId) {
-                        const updatedParam = pl.param
-                            .filter((pd) => pd.paramId !== paramId)
-                            .map((p, index) => ({ ...p, sortOrder: index * 10 })); // 削除後も sortOrder 再計算
-                        return { ...pl, param: updatedParam };
-                    }
-                    return pl;
-                });
-
-                // 削除の結果 param が空になったら paramHas を false にする
-                const targetParams = nextList.find(
-                    (p) => p.productId === productId && p.attributeId === attributeId,
-                );
-                if (targetParams && targetParams.param.length === 0) {
-                    handleAttributeChange(productId, attributeId, 'paramHas', false);
-                }
-                return nextList as Params[];
-            });
-        },
-        [paramsMap, handleAttributeChange],
-    ); // paramsMapとhandleAttributeChangeに依存
-
-    // / --- パラメータ移動ハンドラ ---
-    const moveParam = useCallback(
-        (productId: number, attributeId: number, paramId: number, direction: 'up' | 'down') => {
-            setParamsData((prev) => {
-                return prev.map((pl) => {
-                    if (pl.productId === productId && pl.attributeId === attributeId) {
-                        const params = pl.param;
-                        const currentIndex = params.findIndex((p) => p.paramId === paramId);
-                        if (currentIndex === -1) return pl;
-
-                        let newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-                        if (newIndex < 0 || newIndex >= params.length) return pl; // 範囲外なら何もしない
-
-                        const newParams = [...params]; // 配列をコピー
-                        // 要素を入れ替え
-                        [newParams[currentIndex], newParams[newIndex]] = [
-                            newParams[newIndex],
-                            newParams[currentIndex],
-                        ];
-
-                        // sortOrder をインデックスに基づいて再割り当て
-                        const sortedParams = newParams.map((p, index) => ({
-                            ...p,
-                            sortOrder: index * 10,
-                        }));
-
-                        // 型アサーション（必要であれば）
-                        const paramType = sortedParams[0]?.type;
-                        let typedSortedParams: ParamType1[] | ParamType2[] | ParamType3[] = [];
-                        if (paramType === 'type1') typedSortedParams = sortedParams as ParamType1[];
-                        else if (paramType === 'type2')
-                            typedSortedParams = sortedParams as ParamType2[];
-                        else if (paramType === 'type3')
-                            typedSortedParams = sortedParams as ParamType3[];
-                        else typedSortedParams = []; // 空の場合
-
-                        return { ...pl, param: typedSortedParams };
-                    }
-                    return pl;
-                });
-            });
-        },
-        [],
-    ); // 依存配列は空でOK
-
-    const handleMoveParamUp = useCallback(
-        (productId: number, attributeId: number, paramId: number) => {
-            moveParam(productId, attributeId, paramId, 'up');
-        },
-        [moveParam],
-    );
-
-    const handleMoveParamDown = useCallback(
-        (productId: number, attributeId: number, paramId: number) => {
-            moveParam(productId, attributeId, paramId, 'down');
-        },
-        [moveParam],
-    );
-
     const value = {
         tableData: baseTableData,
-        paramsMap: paramsMap,
-        handleTestContext,
-        handleAttributeChange,
+        paramsMap,
+        isParamsDirtyForAttribute,
         handleParamChange,
         handleAddParam,
         handleDeleteParam,
         handleMoveParamUp,
         handleMoveParamDown,
+        handleTestContext,
+        handleAttributeChange,
     };
 
     return <DetailTableContext.Provider value={value}>{children}</DetailTableContext.Provider>;

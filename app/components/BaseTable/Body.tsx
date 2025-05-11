@@ -2,8 +2,10 @@ import React from 'react';
 import { Product } from '@/app/types';
 import { TableBody, TableRow } from '@mui/material';
 import BaseTableRow from './BodyRow';
+import { usePattern } from './contexts/BaseTableContext';
 
-export default function BaseTableBody({ tableData }: { tableData: Product[] }) {
+export default function BaseTableBody() {
+    const { tableData } = usePattern()
     return (
         <TableBody>
             {tableData.map((row, rowIndex) => (

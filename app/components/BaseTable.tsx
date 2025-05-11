@@ -13,8 +13,7 @@ interface BaseTableProps {
     setParamsData: React.Dispatch<React.SetStateAction<Params[]>>;
     handleAddParamsRow: (
         targetRow: Product,
-        updatedAttributes: Attribute[],
-        attributeIndex: number,
+        updatedAttributes: Attribute,
     ) => void;
 }
 
@@ -37,7 +36,7 @@ export default function BaseTable({
                         setParamsData={setParamsData}
                         onAddParamsDataRow={handleAddParamsRow}
                     >
-                        <BaseTableBody tableData={baseTableData} />
+                        <BaseTableBody />
                     </BaseTableProvider>
                 </Table>
             </TableContainer>

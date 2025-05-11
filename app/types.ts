@@ -1,3 +1,5 @@
+export type ChangeStatus = 'new' | 'updated' | 'deleted' | 'synced';
+
 export interface Attribute {
     attributeId: number;
     attribute: string;
@@ -10,6 +12,8 @@ export interface Attribute {
     masking: boolean;
     online: boolean;
     sortOrder: number;
+    _status?: ChangeStatus; // 変更状態
+    params?: ParamItem[]; // GETレスポンスには含まれるが、AttributeInputには含まれない
 }
 
 export interface Product {
@@ -19,6 +23,7 @@ export interface Product {
     cfgType: string;
     attributes: Attribute[];
     sortOrder: number;
+    _status?: ChangeStatus; // 変更状態
 }
 
 export interface Params {
@@ -30,6 +35,7 @@ export interface Params {
 export interface Param {
     paramId: number;
     sortOrder: number;
+    _status?: ChangeStatus; // 変更状態を追跡
 }
 
 export interface ParamType1 extends Param {
@@ -52,14 +58,56 @@ export interface ParamType3 extends Param {
 
 export type ParamDetail = ParamType1 | ParamType2 | ParamType3;
 
-// APIから取得するデータの型定義 (入力データ用)
+export interface AttributeInput {
+    attribute: string;
+    attributeType: string;
+    attributeJP: string;
+    attributeUnit: string;
+    contract: string;
+    public: boolean;
+    masking: boolean;
+    online: boolean;
+    sortOrder: number;
+}
+
+export interface ParamBaseInput {
+    sortOrder: number;
+}
+
+export interface ParamType1Input extends ParamBaseInput {
+    type: 'type1';
+    code: string;
+    dispName: string;
+}
+
+export interface ParamType2Input extends ParamBaseInput {
+    type: 'type2';
+    min: number;
+    increment: number;
+}
+
+export interface ParamType3Input extends ParamBaseInput {
+    type: 'type3';
+    code: string;
+    dispName: string;
+}
+
+export type ParamItemInput = ParamType1Input | ParamType2Input | ParamType3Input;
+
+/**
+ * OpenAPIの ParamItem スキーマに相当する型。
+ * APIレスポンスでAttribute内のparams配列の要素として使用されます。
+ * これはParamType1, ParamType2, ParamType3のいずれかの型です。
+ */
+export type ParamItem = ParamType1 | ParamType2 | ParamType3;
+
 export interface ApiAttribute {
     attributeId: number;
     attribute: string;
     attributeType: string;
     attributeJP: string;
     attributeUnit: string;
-    params: ParamType1[] | ParamType2[] | ParamType3[]; // APIデータではparamが直接含まれる
+    params: ParamItem[]; //APIサーバー側の実装で担保する
     contract: string;
     public: boolean;
     masking: boolean;

@@ -1,5 +1,6 @@
 import { Product, Attribute } from '@/app/types';
 import { TableRow, TableCell, Stack } from '@mui/material';
+import { Theme, alpha } from '@mui/material/styles'; // テーマカラーを使用する場合
 
 import {
     TextFieldCell,
@@ -65,6 +66,13 @@ function AttributeRow({
     isFirstAttribute: boolean;
     tableDataLength: number;
 }) {
+    const attributeSx = {
+        backgroundColor:
+            attribute._status === 'deleted'
+                ? 'rgba(255, 0, 0, 0.1)' // 'deleted' の場合の背景色
+                : undefined, // 'deleted' でない場合は undefined (何も設定しない)
+    };
+
     return (
         <TableRow
             // key={`${row.prefix}-${rowIndex}`}
@@ -79,18 +87,21 @@ function AttributeRow({
             {isFirstAttribute && (
                 <>
                     <TextFieldCell
+                        sx={attributeSx}
                         rowSpan={rowSpanCount}
                         value={row.prefix}
                         columnId="prefix"
                         rowIndex={rowIndex}
                     />
                     <TextFieldCell
+                        sx={attributeSx}
                         rowSpan={rowSpanCount}
                         value={row.type}
                         columnId="type"
                         rowIndex={rowIndex}
                     />
                     <TextFieldCell
+                        sx={attributeSx}
                         rowSpan={rowSpanCount}
                         value={row.cfgType}
                         columnId="cfgType"
@@ -99,6 +110,7 @@ function AttributeRow({
                 </>
             )}
             <TextFieldCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.attribute}
                 columnId="attribute"
@@ -106,6 +118,7 @@ function AttributeRow({
                 attributeIndex={attributeIndex}
             />
             <AttributeTypeFieldCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.attributeType}
                 columnId="attributeType"
@@ -113,6 +126,7 @@ function AttributeRow({
                 attributeIndex={attributeIndex}
             />
             <TextFieldCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.attributeJP}
                 columnId="attributeJP"
@@ -120,6 +134,7 @@ function AttributeRow({
                 attributeIndex={attributeIndex}
             />
             <TextFieldCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.attributeUnit}
                 columnId="attributeUnit"
@@ -127,6 +142,7 @@ function AttributeRow({
                 attributeIndex={attributeIndex}
             />
             <CheckboxCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.paramHas}
                 columnId="paramHas"
@@ -134,6 +150,7 @@ function AttributeRow({
                 attributeIndex={attributeIndex}
             />
             <TextFieldCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.contract}
                 columnId="contract"
@@ -141,6 +158,7 @@ function AttributeRow({
                 attributeIndex={attributeIndex}
             />
             <CheckboxCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.public}
                 columnId="public"
@@ -148,6 +166,7 @@ function AttributeRow({
                 attributeIndex={attributeIndex}
             />
             <CheckboxCell
+                sx={attributeSx}
                 rowSpan={1}
                 value={attribute.masking}
                 columnId="masking"

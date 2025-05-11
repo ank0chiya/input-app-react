@@ -21,14 +21,16 @@ import { Product, BaseTableTopRow } from '@/app/types';
 import { usePattern } from './contexts/BaseTableContext';
 import { Attribute } from '@/app/types';
 import { Paragliding } from '@mui/icons-material';
-
+import { SxProps, Theme } from '@mui/material';
 export function TextFieldCell({
+    sx,
     rowSpan,
     value,
     columnId,
     rowIndex,
     attributeIndex,
 }: {
+    sx: SxProps<Theme>;
     rowSpan: number;
     value: string;
     columnId: string;
@@ -59,7 +61,6 @@ export function TextFieldCell({
                             | 'attributeJP'
                             | 'attributeType'
                             | 'attributeUnit'
-                            | 'paramHas'
                             | 'contract'
                             | 'masking'
                             | 'public'
@@ -82,7 +83,7 @@ export function TextFieldCell({
     );
 
     return (
-        <TableCell rowSpan={rowSpan}>
+        <TableCell sx={{ ...sx }} rowSpan={rowSpan}>
             <TextField
                 variant="standard"
                 size="small"
@@ -97,12 +98,14 @@ export function TextFieldCell({
 }
 
 export function AttributeTypeFieldCell({
+    sx,
     rowSpan,
     value,
     columnId,
     rowIndex,
     attributeIndex,
 }: {
+    sx: SxProps<Theme>;
     rowSpan: number;
     value: string;
     columnId: string;
@@ -117,7 +120,7 @@ export function AttributeTypeFieldCell({
         </MenuItem>
     ));
     return (
-        <TableCell rowSpan={rowSpan}>
+        <TableCell sx={{ ...sx }} rowSpan={rowSpan}>
             <FormControl variant="standard" size="small" fullWidth>
                 <Select
                     value={value}
@@ -139,12 +142,14 @@ export function AttributeTypeFieldCell({
 }
 
 export function ContractTypeFieldCell({
+    sx,
     rowSpan,
     value,
     columnId,
     rowIndex,
     attributeIndex,
 }: {
+    sx: SxProps<Theme>;
     rowSpan: number;
     value: string;
     columnId: string;
@@ -169,11 +174,11 @@ export function ContractTypeFieldCell({
         }
     });
     return (
-        <TableCell rowSpan={rowSpan}>
+        <TableCell sx={{ ...sx }} rowSpan={rowSpan}>
             <FormControl variant="standard" size="small" fullWidth>
                 <Select
                     value={value}
-                    sx={{ fontSize: '0.875rem' }}
+                    sx={{ ontSize: '0.875rem' }}
                     onChange={(e) =>
                         handleAttributeCellChange(
                             rowIndex,
@@ -191,12 +196,14 @@ export function ContractTypeFieldCell({
 }
 
 export function CheckboxCell({
+    sx,
     rowSpan,
     value,
     columnId,
     rowIndex,
     attributeIndex,
 }: {
+    sx: SxProps<Theme>;
     rowSpan: number;
     value: boolean;
     columnId: keyof Pick<Attribute, 'paramHas' | 'public' | 'masking'>;
@@ -205,7 +212,7 @@ export function CheckboxCell({
 }) {
     const { handleAttributeCellChange } = usePattern();
     return (
-        <TableCell rowSpan={rowSpan} align="center">
+        <TableCell sx={{ ...sx }} rowSpan={rowSpan} align="center">
             <Checkbox
                 size="small"
                 checked={value}
@@ -213,7 +220,7 @@ export function CheckboxCell({
                     handleAttributeCellChange(
                         rowIndex,
                         attributeIndex,
-                        columnId as keyof Pick<Attribute, 'paramHas' | 'public' | 'masking'>,
+                        columnId as keyof Pick<Attribute, 'public' | 'masking'>,
                         e.target.checked,
                     )
                 }
@@ -285,7 +292,6 @@ export function ActionFieldCells({
 }) {
     const {
         tableData,
-        handleTestContext,
         handleAddRow,
         handleAddAttribute,
         handleDeleteAttribute,

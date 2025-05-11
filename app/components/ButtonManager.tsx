@@ -9,9 +9,15 @@ import CircularProgress from '@mui/material/CircularProgress'; // ローディ�
 export default function ButtonManager({
     baseTableData,
     detailTableData,
+    onSaveRequest, 
+    isSaveDisabled,
+    onRefreshRequest 
 }: {
     baseTableData: Product[];
     detailTableData: Params[];
+    onSaveRequest: () => Promise<void>;
+    isSaveDisabled: boolean;
+    onRefreshRequest: () => Promise<void>;
 }) {
     // 登録処理中かどうかのフラグ (任意)
     const [isRegistering, setIsRegistering] = useState(false);
@@ -93,7 +99,7 @@ export default function ButtonManager({
                             <SaveIcon />
                         )
                     }
-                    onClick={handleRegister}
+                    onClick={onSaveRequest}
                     disabled={isRegistering}
                 >
                     {isRegistering ? '登録中...' : '登録'}
