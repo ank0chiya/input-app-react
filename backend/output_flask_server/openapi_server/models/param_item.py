@@ -47,11 +47,11 @@ class ParamItem(Model):
         }
 
         self.attribute_map = {
-            'param_id': 'paramId',
-            'sort_order': 'sortOrder',
+            'param_id': 'param_id',
+            'sort_order': 'sort_order',
             'type': 'type',
             'code': 'code',
-            'disp_name': 'dispName',
+            'disp_name': 'disp_name',
             'min': 'min',
             'increment': 'increment'
         }

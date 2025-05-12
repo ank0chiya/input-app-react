@@ -14,15 +14,15 @@ class Product(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, product_id=None, prefix=None, type=None, cfg_type=None, attributes=None, sort_order=None):  # noqa: E501
+    def __init__(self, prod_id=None, prefix=None, prd_type=None, cfg_type=None, attributes=None, sort_order=None):  # noqa: E501
         """Product - a model defined in OpenAPI
 
-        :param product_id: The product_id of this Product.  # noqa: E501
-        :type product_id: int
+        :param prod_id: The prod_id of this Product.  # noqa: E501
+        :type prod_id: int
         :param prefix: The prefix of this Product.  # noqa: E501
         :type prefix: str
-        :param type: The type of this Product.  # noqa: E501
-        :type type: str
+        :param prd_type: The prd_type of this Product.  # noqa: E501
+        :type prd_type: str
         :param cfg_type: The cfg_type of this Product.  # noqa: E501
         :type cfg_type: str
         :param attributes: The attributes of this Product.  # noqa: E501
@@ -31,26 +31,26 @@ class Product(Model):
         :type sort_order: int
         """
         self.openapi_types = {
-            'product_id': int,
+            'prod_id': int,
             'prefix': str,
-            'type': str,
+            'prd_type': str,
             'cfg_type': str,
             'attributes': List[Attribute],
             'sort_order': int
         }
 
         self.attribute_map = {
-            'product_id': 'productId',
+            'prod_id': 'prod_id',
             'prefix': 'prefix',
-            'type': 'type',
-            'cfg_type': 'cfgType',
+            'prd_type': 'prd_type',
+            'cfg_type': 'cfg_type',
             'attributes': 'attributes',
-            'sort_order': 'sortOrder'
+            'sort_order': 'sort_order'
         }
 
-        self._product_id = product_id
+        self._prod_id = prod_id
         self._prefix = prefix
-        self._type = type
+        self._prd_type = prd_type
         self._cfg_type = cfg_type
         self._attributes = attributes
         self._sort_order = sort_order
@@ -67,27 +67,27 @@ class Product(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def product_id(self) -> int:
-        """Gets the product_id of this Product.
+    def prod_id(self) -> int:
+        """Gets the prod_id of this Product.
 
 
-        :return: The product_id of this Product.
+        :return: The prod_id of this Product.
         :rtype: int
         """
-        return self._product_id
+        return self._prod_id
 
-    @product_id.setter
-    def product_id(self, product_id: int):
-        """Sets the product_id of this Product.
+    @prod_id.setter
+    def prod_id(self, prod_id: int):
+        """Sets the prod_id of this Product.
 
 
-        :param product_id: The product_id of this Product.
-        :type product_id: int
+        :param prod_id: The prod_id of this Product.
+        :type prod_id: int
         """
-        if product_id is None:
-            raise ValueError("Invalid value for `product_id`, must not be `None`")  # noqa: E501
+        if prod_id is None:
+            raise ValueError("Invalid value for `prod_id`, must not be `None`")  # noqa: E501
 
-        self._product_id = product_id
+        self._prod_id = prod_id
 
     @property
     def prefix(self) -> str:
@@ -113,27 +113,27 @@ class Product(Model):
         self._prefix = prefix
 
     @property
-    def type(self) -> str:
-        """Gets the type of this Product.
+    def prd_type(self) -> str:
+        """Gets the prd_type of this Product.
 
 
-        :return: The type of this Product.
+        :return: The prd_type of this Product.
         :rtype: str
         """
-        return self._type
+        return self._prd_type
 
-    @type.setter
-    def type(self, type: str):
-        """Sets the type of this Product.
+    @prd_type.setter
+    def prd_type(self, prd_type: str):
+        """Sets the prd_type of this Product.
 
 
-        :param type: The type of this Product.
-        :type type: str
+        :param prd_type: The prd_type of this Product.
+        :type prd_type: str
         """
-        if type is None:
-            raise ValueError("Invalid value for `type`, must not be `None`")  # noqa: E501
+        if prd_type is None:
+            raise ValueError("Invalid value for `prd_type`, must not be `None`")  # noqa: E501
 
-        self._type = type
+        self._prd_type = prd_type
 
     @property
     def cfg_type(self) -> str:

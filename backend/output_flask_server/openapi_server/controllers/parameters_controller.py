@@ -32,7 +32,7 @@ def add_param(product_id, attribute_id, body):  # noqa: E501
     product_attributes = data.DB["products"][product_id].get("attributes", [])
     target_attribute = None
     for attr in product_attributes:
-        if attr.get("attributeId") == attribute_id:
+        if attr.get("attribute_id") == attribute_id:
             target_attribute = attr
             break
 
@@ -60,15 +60,15 @@ def add_param(product_id, attribute_id, body):  # noqa: E501
     new_param_id = data.get_next_param_id(product_id, attribute_id)
 
     new_param_data = {
-        "paramId": new_param_id,
-        "sortOrder": param_input.get("sortOrder"),
+        "param_id": new_param_id,
+        "sort_order": param_input.get("sort_order"),
         "type": param_type_from_request,  # 検証済みなのでリクエストのtypeを使用
     }
 
     # type に応じたフィールド設定 (前回と同様)
     if param_type_from_request == "type1" or param_type_from_request == "type3":
         new_param_data["code"] = param_input.get("code")
-        new_param_data["dispName"] = param_input.get("dispName")
+        new_param_data["disp_name"] = param_input.get("disp_name")
     elif param_type_from_request == "type2":
         new_param_data["min"] = param_input.get("min")
         new_param_data["increment"] = param_input.get("increment")
@@ -89,7 +89,7 @@ def delete_param(product_id, attribute_id, param_id):  # noqa: E501
     product_attributes = data.DB["products"][product_id].get("attributes", [])
     target_attribute = None
     for attr in product_attributes:
-        if attr.get("attributeId") == attribute_id:
+        if attr.get("attribute_id") == attribute_id:
             target_attribute = attr
             break
     if not target_attribute:
@@ -99,7 +99,7 @@ def delete_param(product_id, attribute_id, param_id):  # noqa: E501
     target_attribute["params"] = [
         p_data
         for p_data in target_attribute.get("params", [])
-        if p_data.get("paramId") != param_id
+        if p_data.get("param_id") != param_id
     ]
 
     if len(target_attribute["params"]) == original_len:
@@ -116,7 +116,7 @@ def update_param(product_id, attribute_id, param_id, body):  # noqa: E501
     product_attributes = data.DB["products"][product_id].get("attributes", [])
     target_attribute = None
     for attr in product_attributes:
-        if attr.get("attributeId") == attribute_id:
+        if attr.get("attribute_id") == attribute_id:
             target_attribute = attr
             break
     if not target_attribute:
@@ -125,7 +125,7 @@ def update_param(product_id, attribute_id, param_id, body):  # noqa: E501
     target_param = None
     param_idx = -1
     for i, p_data in enumerate(target_attribute.get("params", [])):
-        if p_data.get("paramId") == param_id:
+        if p_data.get("param_id") == param_id:
             target_param = p_data
             param_idx = i
             break
@@ -163,8 +163,8 @@ def update_param(product_id, attribute_id, param_id, body):  # noqa: E501
     )
 
     # 基本フィールドの更新
-    target_param["sortOrder"] = update_data.get(
-        "sortOrder", target_param.get("sortOrder")
+    target_param["sort_order"] = update_data.get(
+        "sort_order", target_param.get("sort_order")
     )
 
     # typeが実際に変更されたか、あるいはリクエストで明示的に指定された場合、
@@ -180,7 +180,7 @@ def update_param(product_id, attribute_id, param_id, body):  # noqa: E501
             "type3",
         ]:
             target_param.pop("code", None)
-            target_param.pop("dispName", None)
+            target_param.pop("disp_name", None)
         elif current_internal_type == "type2" and final_param_type != "type2":
             target_param.pop("min", None)
             target_param.pop("increment", None)
@@ -197,10 +197,10 @@ def update_param(product_id, attribute_id, param_id, body):  # noqa: E501
                 else None
             ),
         )
-        target_param["dispName"] = update_data.get(
-            "dispName",
+        target_param["disp_name"] = update_data.get(
+            "disp_name",
             (
-                target_param.get("dispName")
+                target_param.get("disp_name")
                 if target_param["type"] == update_data.get("type", target_param["type"])
                 else None
             ),

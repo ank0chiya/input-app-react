@@ -1,12 +1,12 @@
 openapi: 3.0.0
 info:
   title: Sample Product API
-  version: v1.2.1 # バージョンを更新
-  description: API for managing products and attributes. Params are managed via dedicated endpoints. Attribute creation/update does not include params list directly. 'param' field in Attribute renamed to 'params'. Corrected tags for DELETE methods.
+  version: v1.3.1 # バージョンを更新 (Attributeスキーマの 'attribute' -> 'code' キー名変更)
+  description: API for managing products and attributes. Params are managed via dedicated endpoints. Attribute creation/update does not include params list directly. Schema key names updated to snake_case. Attribute key 'attribute' renamed to 'code'.
 servers:
   - url: http://localhost:8080/api # Example server URL
     description: Development server
-    
+
 tags:
   - name: Products
     description: Product related operations
@@ -16,21 +16,22 @@ tags:
     description: Parameter related operations
   - name: Utilities
     description: Utility operations for the mock server
+
 components:
   schemas:
     # --- Base Schemas (primarily for responses or when ID is known) ---
     ParamBase:
       type: object
       properties:
-        paramId:
+        param_id:
           type: integer
           description: Unique identifier for the parameter.
           readOnly: true
-        sortOrder:
+        sort_order:
           type: integer
       required:
-        - paramId
-        - sortOrder
+        - param_id
+        - sort_order
 
     ParamType1Item:
       allOf:
@@ -42,12 +43,12 @@ components:
               enum: [type1]
             code:
               type: string
-            dispName:
+            disp_name:
               type: string
           required:
             - type
             - code
-            - dispName
+            - disp_name
 
     ParamType2Item:
       allOf:
@@ -76,12 +77,12 @@ components:
               enum: [type3]
             code:
               type: string
-            dispName:
+            disp_name:
               type: string
           required:
             - type
             - code
-            - dispName
+            - disp_name
 
     ParamItem: # For GET responses primarily
       oneOf:
@@ -98,16 +99,17 @@ components:
     Attribute: # For GET responses primarily
       type: object
       properties:
-        attributeId:
+        attribute_id:
           type: integer
           readOnly: true
-        attribute:
+        code: # MODIFIED from 'attribute' to 'code'
           type: string
-        attributeType:
+          description: Code identifier for the attribute (formerly 'attribute').
+        data_type:
           type: string
-        attributeJP:
+        disp_name:
           type: string
-        attributeUnit:
+        unit:
           type: string
         params:
           type: array
@@ -122,55 +124,55 @@ components:
           type: boolean
         online:
           type: boolean
-        sortOrder:
+        sort_order:
           type: integer
       required:
-        - attributeId
-        - attribute
-        - attributeType
-        - attributeJP
-        - attributeUnit
+        - attribute_id
+        - code # MODIFIED from 'attribute'
+        - data_type
+        - disp_name
+        - unit
         - params
         - contract
         - public
         - masking
         - online
-        - sortOrder
+        - sort_order
 
     Product: # For GET responses primarily
       type: object
       properties:
-        productId:
+        prod_id:
           type: integer
           readOnly: true
         prefix:
           type: string
-        type:
+        prd_type:
           type: string
-        cfgType:
+        cfg_type:
           type: string
         attributes:
           type: array
           items:
             $ref: "#/components/schemas/Attribute"
-        sortOrder:
+        sort_order:
           type: integer
       required:
-        - productId
+        - prod_id
         - prefix
-        - type
-        - cfgType
+        - prd_type
+        - cfg_type
         - attributes
-        - sortOrder
+        - sort_order
 
     # --- Input Schemas (for POST/PUT request bodies) ---
     ParamBaseInput:
       type: object
       properties:
-        sortOrder:
+        sort_order:
           type: integer
       required:
-        - sortOrder
+        - sort_order
 
     ParamType1ItemInput:
       allOf:
@@ -182,12 +184,12 @@ components:
               enum: [type1]
             code:
               type: string
-            dispName:
+            disp_name:
               type: string
           required:
             - type
             - code
-            - dispName
+            - disp_name
 
     ParamType2ItemInput:
       allOf:
@@ -216,12 +218,12 @@ components:
               enum: [type3]
             code:
               type: string
-            dispName:
+            disp_name:
               type: string
           required:
             - type
             - code
-            - dispName
+            - disp_name
 
     ParamItemInput: # For POST/PUT request bodies for Parameters
       oneOf:
@@ -238,14 +240,17 @@ components:
     AttributeInput: # For POST/PUT request bodies for Attributes
       type: object
       properties:
-        attribute:
+        # attribute_id is excluded
+        code: # MODIFIED from 'attribute' to 'code'
           type: string
-        attributeType:
+          description: Code identifier for the attribute (formerly 'attribute').
+        data_type:
           type: string
-        attributeJP:
+        disp_name:
           type: string
-        attributeUnit:
+        unit:
           type: string
+        # params field is EXCLUDED
         contract:
           type: string
         public:
@@ -254,18 +259,19 @@ components:
           type: boolean
         online:
           type: boolean
-        sortOrder:
+        sort_order:
           type: integer
       required:
-        - attribute
-        - attributeType
-        - attributeJP
-        - attributeUnit
+        - code # MODIFIED from 'attribute'
+        - data_type
+        - disp_name
+        - unit
+        # params is EXCLUDED
         - contract
         - public
         - masking
         - online
-        - sortOrder
+        - sort_order
 
     # --- Error Schema ---
     Error:
@@ -273,12 +279,12 @@ components:
       properties:
         message:
           type: string
-        code:
+        code: # Error code (string, optional)
           type: string
       required:
         - message
 
-  parameters:
+  parameters: # Path parameters - names remain camelCase as they are part of the URL structure
     ProductIdParameter:
       name: productId
       in: path
@@ -366,7 +372,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/ProductIdParameter"
       requestBody:
-        description: The attribute to add. `attributeId` and `params` list are server-managed and should not be provided.
+        description: The attribute to add. `attribute_id` and `params` list are server-managed and should not be provided.
         required: true
         content:
           application/json:
@@ -400,7 +406,7 @@ paths:
         - $ref: "#/components/parameters/ProductIdParameter"
         - $ref: "#/components/parameters/AttributeIdParameter"
       requestBody:
-        description: The updated attribute data. `attributeId` is from the path. `params` list is not modified by this endpoint.
+        description: The updated attribute data. `attribute_id` is from the path. `params` list is not modified by this endpoint.
         required: true
         content:
           application/json:
@@ -426,7 +432,7 @@ paths:
     delete:
       summary: Delete a specific attribute from a product
       operationId: deleteAttribute
-      tags: # MODIFIED: Added/Ensured tags
+      tags:
         - Attributes
       parameters:
         - $ref: "#/components/parameters/ProductIdParameter"
@@ -453,7 +459,7 @@ paths:
         - $ref: "#/components/parameters/ProductIdParameter"
         - $ref: "#/components/parameters/AttributeIdParameter"
       requestBody:
-        description: The parameter to add. `paramId` will be assigned by the server.
+        description: The parameter to add. `param_id` will be assigned by the server.
         required: true
         content:
           application/json:
@@ -488,7 +494,7 @@ paths:
         - $ref: "#/components/parameters/AttributeIdParameter"
         - $ref: "#/components/parameters/ParamIdParameter"
       requestBody:
-        description: The updated parameter data. `paramId` is from the path.
+        description: The updated parameter data. `param_id` is from the path.
         required: true
         content:
           application/json:
@@ -514,7 +520,7 @@ paths:
     delete:
       summary: Delete a specific parameter from an attribute
       operationId: deleteParam
-      tags: # MODIFIED: Added/Ensured tags
+      tags:
         - Parameters
       parameters:
         - $ref: "#/components/parameters/ProductIdParameter"
@@ -536,7 +542,7 @@ paths:
       summary: Reset all mock data to its initial state
       operationId: refreshMockData
       tags:
-        - Utilities # または MockControl, Admin など、適切なタググループ
+        - Utilities
       responses:
         "200":
           description: Mock data has been successfully reset.
@@ -553,4 +559,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error" # 既存のErrorスキーマを参照
+                $ref: "#/components/schemas/Error"

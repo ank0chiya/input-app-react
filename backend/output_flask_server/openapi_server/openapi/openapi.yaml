@@ -1,10 +1,10 @@
 openapi: 3.0.0
 info:
   description: API for managing products and attributes. Params are managed via dedicated
-    endpoints. Attribute creation/update does not include params list directly. 'param'
-    field in Attribute renamed to 'params'. Corrected tags for DELETE methods.
+    endpoints. Attribute creation/update does not include params list directly. Schema
+    key names updated to snake_case. Attribute key 'attribute' renamed to 'code'.
   title: Sample Product API
-  version: v1.2.1
+  version: v1.3.1
 servers:
 - description: Development server
   url: http://localhost:8080/api
@@ -90,7 +90,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AttributeInput'
-        description: The attribute to add. `attributeId` and `params` list are server-managed
+        description: The attribute to add. `attribute_id` and `params` list are server-managed
           and should not be provided.
         required: true
       responses:
@@ -182,8 +182,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AttributeInput'
-        description: The updated attribute data. `attributeId` is from the path. `params`
-          list is not modified by this endpoint.
+        description: The updated attribute data. `attribute_id` is from the path.
+          `params` list is not modified by this endpoint.
         required: true
       responses:
         "200":
@@ -239,7 +239,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ParamItemInput'
-        description: The parameter to add. `paramId` will be assigned by the server.
+        description: The parameter to add. `param_id` will be assigned by the server.
         required: true
       responses:
         "201":
@@ -343,7 +343,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ParamItemInput'
-        description: The updated parameter data. `paramId` is from the path.
+        description: The updated parameter data. `param_id` is from the path.
         required: true
       responses:
         "200":
@@ -442,17 +442,17 @@ components:
   schemas:
     ParamBase:
       properties:
-        paramId:
+        param_id:
           description: Unique identifier for the parameter.
           readOnly: true
-          title: paramId
+          title: param_id
           type: integer
-        sortOrder:
-          title: sortOrder
+        sort_order:
+          title: sort_order
           type: integer
       required:
-      - paramId
-      - sortOrder
+      - param_id
+      - sort_order
       title: ParamBase
       type: object
     ParamType1Item:
@@ -465,19 +465,19 @@ components:
             type: string
           code:
             type: string
-          dispName:
+          disp_name:
             type: string
         required:
         - code
-        - dispName
+        - disp_name
         - type
         type: object
       example:
         code: code
-        sortOrder: 5
-        paramId: 1
+        disp_name: disp_name
         type: type1
-        dispName: dispName
+        sort_order: 5
+        param_id: 1
       title: ParamType1Item
     ParamType2Item:
       allOf:
@@ -507,11 +507,11 @@ components:
             type: string
           code:
             type: string
-          dispName:
+          disp_name:
             type: string
         required:
         - code
-        - dispName
+        - disp_name
         - type
         type: object
       title: ParamType3Item
@@ -529,43 +529,44 @@ components:
       title: ParamItem
     Attribute:
       example:
-        attributeId: 6
-        attributeUnit: attributeUnit
+        unit: unit
         masking: true
+        code: code
         public: true
-        attributeJP: attributeJP
-        attributeType: attributeType
+        attribute_id: 6
         contract: contract
-        sortOrder: 5
+        data_type: data_type
+        disp_name: disp_name
         online: true
-        attribute: attribute
         params:
         - code: code
-          sortOrder: 5
-          paramId: 1
+          disp_name: disp_name
           type: type1
-          dispName: dispName
+          sort_order: 5
+          param_id: 1
         - code: code
-          sortOrder: 5
-          paramId: 1
+          disp_name: disp_name
           type: type1
-          dispName: dispName
+          sort_order: 5
+          param_id: 1
+        sort_order: 5
       properties:
-        attributeId:
+        attribute_id:
           readOnly: true
-          title: attributeId
+          title: attribute_id
           type: integer
-        attribute:
-          title: attribute
+        code:
+          description: Code identifier for the attribute (formerly 'attribute').
+          title: code
           type: string
-        attributeType:
-          title: attributeType
+        data_type:
+          title: data_type
           type: string
-        attributeJP:
-          title: attributeJP
+        disp_name:
+          title: disp_name
           type: string
-        attributeUnit:
-          title: attributeUnit
+        unit:
+          title: unit
           type: string
         params:
           description: "List of parameters. Managed via /params endpoint. Included\
@@ -586,111 +587,111 @@ components:
         online:
           title: online
           type: boolean
-        sortOrder:
-          title: sortOrder
+        sort_order:
+          title: sort_order
           type: integer
       required:
-      - attribute
-      - attributeId
-      - attributeJP
-      - attributeType
-      - attributeUnit
+      - attribute_id
+      - code
       - contract
+      - data_type
+      - disp_name
       - masking
       - online
       - params
       - public
-      - sortOrder
+      - sort_order
+      - unit
       title: Attribute
       type: object
     Product:
       example:
-        productId: 0
-        cfgType: cfgType
+        cfg_type: cfg_type
         prefix: prefix
-        sortOrder: 2
+        prd_type: prd_type
         attributes:
-        - attributeId: 6
-          attributeUnit: attributeUnit
+        - unit: unit
           masking: true
+          code: code
           public: true
-          attributeJP: attributeJP
-          attributeType: attributeType
+          attribute_id: 6
           contract: contract
-          sortOrder: 5
+          data_type: data_type
+          disp_name: disp_name
           online: true
-          attribute: attribute
           params:
           - code: code
-            sortOrder: 5
-            paramId: 1
+            disp_name: disp_name
             type: type1
-            dispName: dispName
+            sort_order: 5
+            param_id: 1
           - code: code
-            sortOrder: 5
-            paramId: 1
+            disp_name: disp_name
             type: type1
-            dispName: dispName
-        - attributeId: 6
-          attributeUnit: attributeUnit
+            sort_order: 5
+            param_id: 1
+          sort_order: 5
+        - unit: unit
           masking: true
+          code: code
           public: true
-          attributeJP: attributeJP
-          attributeType: attributeType
+          attribute_id: 6
           contract: contract
-          sortOrder: 5
+          data_type: data_type
+          disp_name: disp_name
           online: true
-          attribute: attribute
           params:
           - code: code
-            sortOrder: 5
-            paramId: 1
+            disp_name: disp_name
             type: type1
-            dispName: dispName
+            sort_order: 5
+            param_id: 1
           - code: code
-            sortOrder: 5
-            paramId: 1
+            disp_name: disp_name
             type: type1
-            dispName: dispName
-        type: type
+            sort_order: 5
+            param_id: 1
+          sort_order: 5
+        sort_order: 2
+        prod_id: 0
       properties:
-        productId:
+        prod_id:
           readOnly: true
-          title: productId
+          title: prod_id
           type: integer
         prefix:
           title: prefix
           type: string
-        type:
-          title: type
+        prd_type:
+          title: prd_type
           type: string
-        cfgType:
-          title: cfgType
+        cfg_type:
+          title: cfg_type
           type: string
         attributes:
           items:
             $ref: '#/components/schemas/Attribute'
           title: attributes
           type: array
-        sortOrder:
-          title: sortOrder
+        sort_order:
+          title: sort_order
           type: integer
       required:
       - attributes
-      - cfgType
+      - cfg_type
+      - prd_type
       - prefix
-      - productId
-      - sortOrder
-      - type
+      - prod_id
+      - sort_order
       title: Product
       type: object
     ParamBaseInput:
       properties:
-        sortOrder:
-          title: sortOrder
+        sort_order:
+          title: sort_order
           type: integer
       required:
-      - sortOrder
+      - sort_order
       title: ParamBaseInput
       type: object
     ParamType1ItemInput:
@@ -703,18 +704,18 @@ components:
             type: string
           code:
             type: string
-          dispName:
+          disp_name:
             type: string
         required:
         - code
-        - dispName
+        - disp_name
         - type
         type: object
       example:
         code: code
-        sortOrder: 0
+        disp_name: disp_name
         type: type1
-        dispName: dispName
+        sort_order: 0
       title: ParamType1ItemInput
     ParamType2ItemInput:
       allOf:
@@ -744,11 +745,11 @@ components:
             type: string
           code:
             type: string
-          dispName:
+          disp_name:
             type: string
         required:
         - code
-        - dispName
+        - disp_name
         - type
         type: object
       title: ParamType3ItemInput
@@ -766,27 +767,28 @@ components:
       title: ParamItemInput
     AttributeInput:
       example:
-        attributeUnit: attributeUnit
+        unit: unit
         masking: true
+        code: code
         public: true
-        attributeJP: attributeJP
-        attributeType: attributeType
         contract: contract
-        sortOrder: 0
+        data_type: data_type
+        disp_name: disp_name
         online: true
-        attribute: attribute
+        sort_order: 0
       properties:
-        attribute:
-          title: attribute
+        code:
+          description: Code identifier for the attribute (formerly 'attribute').
+          title: code
           type: string
-        attributeType:
-          title: attributeType
+        data_type:
+          title: data_type
           type: string
-        attributeJP:
-          title: attributeJP
+        disp_name:
+          title: disp_name
           type: string
-        attributeUnit:
-          title: attributeUnit
+        unit:
+          title: unit
           type: string
         contract:
           title: contract
@@ -800,19 +802,19 @@ components:
         online:
           title: online
           type: boolean
-        sortOrder:
-          title: sortOrder
+        sort_order:
+          title: sort_order
           type: integer
       required:
-      - attribute
-      - attributeJP
-      - attributeType
-      - attributeUnit
+      - code
       - contract
+      - data_type
+      - disp_name
       - masking
       - online
       - public
-      - sortOrder
+      - sort_order
+      - unit
       title: AttributeInput
       type: object
     Error:

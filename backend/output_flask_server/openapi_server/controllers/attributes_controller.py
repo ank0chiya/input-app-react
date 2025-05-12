@@ -23,16 +23,16 @@ def add_attribute(product_id, body):  # noqa: E501
 
     new_attr_id = data.get_next_attribute_id(product_id)
     new_attribute_data = {
-        "attributeId": new_attr_id,
-        "attribute": attribute_input.get("attribute"),
-        "attributeType": attribute_input.get("attributeType"),
-        "attributeJP": attribute_input.get("attributeJP"),
-        "attributeUnit": attribute_input.get("attributeUnit"),
+        "attribute_id": new_attr_id,
+        "code": attribute_input.get("code"),
+        "data_type": attribute_input.get("data_type"),
+        "disp_name": attribute_input.get("disp_name"),
+        "unit": attribute_input.get("unit"),
         "contract": attribute_input.get("contract"),
         "public": attribute_input.get("public", False),  # デフォルト値の考慮
         "masking": attribute_input.get("masking", False),
         "online": attribute_input.get("online", False),
-        "sortOrder": attribute_input.get("sortOrder", 0),
+        "sort_order": attribute_input.get("sort_order", 0),
         "params": [],  # 新規作成時はparamsは空
     }
 
@@ -49,7 +49,7 @@ def delete_attribute(product_id, attribute_id):  # noqa: E501
     original_len = len(product_attributes)
 
     data.DB["products"][product_id]["attributes"] = [
-        attr for attr in product_attributes if attr.get("attributeId") != attribute_id
+        attr for attr in product_attributes if attr.get("attribute_id") != attribute_id
     ]
 
     if len(data.DB["products"][product_id]["attributes"]) == original_len:
@@ -67,7 +67,7 @@ def update_attribute(product_id, attribute_id, body):  # noqa: E501
     attr_to_update = None
     attr_idx = -1
     for i, attr in enumerate(product_attributes):
-        if attr.get("attributeId") == attribute_id:
+        if attr.get("attribute_id") == attribute_id:
             attr_to_update = attr
             attr_idx = i
             break
@@ -79,24 +79,20 @@ def update_attribute(product_id, attribute_id, body):  # noqa: E501
     update_data = body
 
     # params以外のフィールドを更新
-    attr_to_update["attribute"] = update_data.get(
-        "attribute", attr_to_update["attribute"]
+    attr_to_update["code"] = update_data.get("code", attr_to_update["code"])
+    attr_to_update["data_type"] = update_data.get(
+        "data_type", attr_to_update["data_type"]
     )
-    attr_to_update["attributeType"] = update_data.get(
-        "attributeType", attr_to_update["attributeType"]
+    attr_to_update["disp_name"] = update_data.get(
+        "disp_name", attr_to_update["disp_name"]
     )
-    attr_to_update["attributeJP"] = update_data.get(
-        "attributeJP", attr_to_update["attributeJP"]
-    )
-    attr_to_update["attributeUnit"] = update_data.get(
-        "attributeUnit", attr_to_update["attributeUnit"]
-    )
+    attr_to_update["unit"] = update_data.get("unit", attr_to_update["unit"])
     attr_to_update["contract"] = update_data.get("contract", attr_to_update["contract"])
     attr_to_update["public"] = update_data.get("public", attr_to_update["public"])
     attr_to_update["masking"] = update_data.get("masking", attr_to_update["masking"])
     attr_to_update["online"] = update_data.get("online", attr_to_update["online"])
-    attr_to_update["sortOrder"] = update_data.get(
-        "sortOrder", attr_to_update["sortOrder"]
+    attr_to_update["sort_order"] = update_data.get(
+        "sort_order", attr_to_update["sort_order"]
     )
     # paramsリストはこのエンドポイントでは変更しない
 

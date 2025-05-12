@@ -23,7 +23,7 @@ class ParamBaseInput(Model):
         }
 
         self.attribute_map = {
-            'sort_order': 'sortOrder'
+            'sort_order': 'sort_order'
         }
 
         self._sort_order = sort_order

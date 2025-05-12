@@ -31,7 +31,7 @@ setup(
     entry_points={
         'console_scripts': ['openapi_server=openapi_server.__main__:main']},
     long_description="""\
-    API for managing products and attributes. Params are managed via dedicated endpoints. Attribute creation/update does not include params list directly. &#39;param&#39; field in Attribute renamed to &#39;params&#39;. Corrected tags for DELETE methods.
+    API for managing products and attributes. Params are managed via dedicated endpoints. Attribute creation/update does not include params list directly. Schema key names updated to snake_case. Attribute key &#39;attribute&#39; renamed to &#39;code&#39;.
     """
 )
 

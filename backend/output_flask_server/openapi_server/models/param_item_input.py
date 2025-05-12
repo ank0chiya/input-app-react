@@ -44,10 +44,10 @@ class ParamItemInput(Model):
         }
 
         self.attribute_map = {
-            'sort_order': 'sortOrder',
+            'sort_order': 'sort_order',
             'type': 'type',
             'code': 'code',
-            'disp_name': 'dispName',
+            'disp_name': 'disp_name',
             'min': 'min',
             'increment': 'increment'
         }

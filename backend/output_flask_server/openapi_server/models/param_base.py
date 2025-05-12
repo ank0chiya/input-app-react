@@ -26,8 +26,8 @@ class ParamBase(Model):
         }
 
         self.attribute_map = {
-            'param_id': 'paramId',
-            'sort_order': 'sortOrder'
+            'param_id': 'param_id',
+            'sort_order': 'sort_order'
         }
 
         self._param_id = param_id

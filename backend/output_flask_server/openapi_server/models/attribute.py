@@ -14,19 +14,19 @@ class Attribute(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, attribute_id=None, attribute=None, attribute_type=None, attribute_jp=None, attribute_unit=None, params=None, contract=None, public=None, masking=None, online=None, sort_order=None):  # noqa: E501
+    def __init__(self, attribute_id=None, code=None, data_type=None, disp_name=None, unit=None, params=None, contract=None, public=None, masking=None, online=None, sort_order=None):  # noqa: E501
         """Attribute - a model defined in OpenAPI
 
         :param attribute_id: The attribute_id of this Attribute.  # noqa: E501
         :type attribute_id: int
-        :param attribute: The attribute of this Attribute.  # noqa: E501
-        :type attribute: str
-        :param attribute_type: The attribute_type of this Attribute.  # noqa: E501
-        :type attribute_type: str
-        :param attribute_jp: The attribute_jp of this Attribute.  # noqa: E501
-        :type attribute_jp: str
-        :param attribute_unit: The attribute_unit of this Attribute.  # noqa: E501
-        :type attribute_unit: str
+        :param code: The code of this Attribute.  # noqa: E501
+        :type code: str
+        :param data_type: The data_type of this Attribute.  # noqa: E501
+        :type data_type: str
+        :param disp_name: The disp_name of this Attribute.  # noqa: E501
+        :type disp_name: str
+        :param unit: The unit of this Attribute.  # noqa: E501
+        :type unit: str
         :param params: The params of this Attribute.  # noqa: E501
         :type params: List[ParamItem]
         :param contract: The contract of this Attribute.  # noqa: E501
@@ -42,10 +42,10 @@ class Attribute(Model):
         """
         self.openapi_types = {
             'attribute_id': int,
-            'attribute': str,
-            'attribute_type': str,
-            'attribute_jp': str,
-            'attribute_unit': str,
+            'code': str,
+            'data_type': str,
+            'disp_name': str,
+            'unit': str,
             'params': List[ParamItem],
             'contract': str,
             'public': bool,
@@ -55,24 +55,24 @@ class Attribute(Model):
         }
 
         self.attribute_map = {
-            'attribute_id': 'attributeId',
-            'attribute': 'attribute',
-            'attribute_type': 'attributeType',
-            'attribute_jp': 'attributeJP',
-            'attribute_unit': 'attributeUnit',
+            'attribute_id': 'attribute_id',
+            'code': 'code',
+            'data_type': 'data_type',
+            'disp_name': 'disp_name',
+            'unit': 'unit',
             'params': 'params',
             'contract': 'contract',
             'public': 'public',
             'masking': 'masking',
             'online': 'online',
-            'sort_order': 'sortOrder'
+            'sort_order': 'sort_order'
         }
 
         self._attribute_id = attribute_id
-        self._attribute = attribute
-        self._attribute_type = attribute_type
-        self._attribute_jp = attribute_jp
-        self._attribute_unit = attribute_unit
+        self._code = code
+        self._data_type = data_type
+        self._disp_name = disp_name
+        self._unit = unit
         self._params = params
         self._contract = contract
         self._public = public
@@ -115,96 +115,98 @@ class Attribute(Model):
         self._attribute_id = attribute_id
 
     @property
-    def attribute(self) -> str:
-        """Gets the attribute of this Attribute.
+    def code(self) -> str:
+        """Gets the code of this Attribute.
 
+        Code identifier for the attribute (formerly 'attribute').  # noqa: E501
 
-        :return: The attribute of this Attribute.
+        :return: The code of this Attribute.
         :rtype: str
         """
-        return self._attribute
+        return self._code
 
-    @attribute.setter
-    def attribute(self, attribute: str):
-        """Sets the attribute of this Attribute.
+    @code.setter
+    def code(self, code: str):
+        """Sets the code of this Attribute.
 
+        Code identifier for the attribute (formerly 'attribute').  # noqa: E501
 
-        :param attribute: The attribute of this Attribute.
-        :type attribute: str
+        :param code: The code of this Attribute.
+        :type code: str
         """
-        if attribute is None:
-            raise ValueError("Invalid value for `attribute`, must not be `None`")  # noqa: E501
+        if code is None:
+            raise ValueError("Invalid value for `code`, must not be `None`")  # noqa: E501
 
-        self._attribute = attribute
+        self._code = code
 
     @property
-    def attribute_type(self) -> str:
-        """Gets the attribute_type of this Attribute.
+    def data_type(self) -> str:
+        """Gets the data_type of this Attribute.
 
 
-        :return: The attribute_type of this Attribute.
+        :return: The data_type of this Attribute.
         :rtype: str
         """
-        return self._attribute_type
+        return self._data_type
 
-    @attribute_type.setter
-    def attribute_type(self, attribute_type: str):
-        """Sets the attribute_type of this Attribute.
+    @data_type.setter
+    def data_type(self, data_type: str):
+        """Sets the data_type of this Attribute.
 
 
-        :param attribute_type: The attribute_type of this Attribute.
-        :type attribute_type: str
+        :param data_type: The data_type of this Attribute.
+        :type data_type: str
         """
-        if attribute_type is None:
-            raise ValueError("Invalid value for `attribute_type`, must not be `None`")  # noqa: E501
+        if data_type is None:
+            raise ValueError("Invalid value for `data_type`, must not be `None`")  # noqa: E501
 
-        self._attribute_type = attribute_type
+        self._data_type = data_type
 
     @property
-    def attribute_jp(self) -> str:
-        """Gets the attribute_jp of this Attribute.
+    def disp_name(self) -> str:
+        """Gets the disp_name of this Attribute.
 
 
-        :return: The attribute_jp of this Attribute.
+        :return: The disp_name of this Attribute.
         :rtype: str
         """
-        return self._attribute_jp
+        return self._disp_name
 
-    @attribute_jp.setter
-    def attribute_jp(self, attribute_jp: str):
-        """Sets the attribute_jp of this Attribute.
+    @disp_name.setter
+    def disp_name(self, disp_name: str):
+        """Sets the disp_name of this Attribute.
 
 
-        :param attribute_jp: The attribute_jp of this Attribute.
-        :type attribute_jp: str
+        :param disp_name: The disp_name of this Attribute.
+        :type disp_name: str
         """
-        if attribute_jp is None:
-            raise ValueError("Invalid value for `attribute_jp`, must not be `None`")  # noqa: E501
+        if disp_name is None:
+            raise ValueError("Invalid value for `disp_name`, must not be `None`")  # noqa: E501
 
-        self._attribute_jp = attribute_jp
+        self._disp_name = disp_name
 
     @property
-    def attribute_unit(self) -> str:
-        """Gets the attribute_unit of this Attribute.
+    def unit(self) -> str:
+        """Gets the unit of this Attribute.
 
 
-        :return: The attribute_unit of this Attribute.
+        :return: The unit of this Attribute.
         :rtype: str
         """
-        return self._attribute_unit
+        return self._unit
 
-    @attribute_unit.setter
-    def attribute_unit(self, attribute_unit: str):
-        """Sets the attribute_unit of this Attribute.
+    @unit.setter
+    def unit(self, unit: str):
+        """Sets the unit of this Attribute.
 
 
-        :param attribute_unit: The attribute_unit of this Attribute.
-        :type attribute_unit: str
+        :param unit: The unit of this Attribute.
+        :type unit: str
         """
-        if attribute_unit is None:
-            raise ValueError("Invalid value for `attribute_unit`, must not be `None`")  # noqa: E501
+        if unit is None:
+            raise ValueError("Invalid value for `unit`, must not be `None`")  # noqa: E501
 
-        self._attribute_unit = attribute_unit
+        self._unit = unit
 
     @property
     def params(self) -> List[ParamItem]:
