@@ -11,10 +11,10 @@ import {
     AttributeInput, // POST/PUT Attribute時のリクエストボディ型 (paramsを含まない)
     ParamItemInput, // POST/PUT Param時のリクエストボディ型 (paramIdを含まない)
 } from '../types'; // 型定義のパスはプロジェクト構成に合わせてください
-
+import * as AppTypes from '../types';
+import * as Mappers from '@/app/lib/apiMappers';
 // Next.jsのRewrites機能で設定したパス、またはAPIサーバーのベースURL
-const API_BASE_PATH = '/api-proxy'; // 例: next.config.js の source に合わせたパス
-
+const API_PROXY_PATH = '/api-proxy';
 // 共通レスポンスハンドラ
 async function handleApiResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
@@ -29,8 +29,7 @@ async function handleApiResponse<T>(response: Response): Promise<T> {
         throw new Error(errorData.message || `API request failed: ${response.status}`);
     }
     if (response.status === 204) {
-        // No Content
-        return undefined as T; // または Promise.resolve(undefined as any)
+        return undefined as T;
     }
     return response.json() as Promise<T>;
 }
@@ -98,13 +97,15 @@ function transformApiDataForFrontend(apiData: ApiProduct[]): {
 /**
  * 全てのProductデータを取得し、フロントエンド表示用に変換します。
  */
+// --- Product/Attribute/Param 取得 (GET) ---
 export async function fetchAllProductsForDisplay(): Promise<{
-    products: Product[];
-    paramsList: Params[];
+    products: AppTypes.Product[];
+    paramsList: AppTypes.Params[];
 }> {
-    const response = await fetch(`${API_BASE_PATH}/products`);
-    const apiData: ApiProduct[] = await handleApiResponse<ApiProduct[]>(response);
-    return transformApiDataForFrontend(apiData);
+    const response = await fetch(`${API_PROXY_PATH}/products`);
+    const apiProducts: AppTypes.ApiProductResponse[] =
+        await handleApiResponse<AppTypes.ApiProductResponse[]>(response);
+    return Mappers.mapApiProductsToAppProductsAndParams(apiProducts); // ★マッピング★
 }
 
 /**
@@ -112,7 +113,7 @@ export async function fetchAllProductsForDisplay(): Promise<{
  * Note: この関数はApiProductを返します。表示用に変換が必要な場合は別途transformしてください。
  */
 export async function fetchProductById(productId: number): Promise<ApiProduct> {
-    const response = await fetch(`${API_BASE_PATH}/products/${productId}`);
+    const response = await fetch(`${API_PROXY_PATH}/products/${productId}`);
     return handleApiResponse<ApiProduct>(response);
 }
 
@@ -122,18 +123,19 @@ export async function fetchProductById(productId: number): Promise<ApiProduct> {
  * リクエストボディには AttributeInput を使用 (paramsを含まない)。
  * レスポンスとして、作成された完全な Attribute オブジェクト (paramsは空配列またはAPI仕様による) を期待。
  */
+// --- Attribute API Functions ---
 export async function addAttributeToProduct(
     productId: number,
-    attributeData: AttributeInput,
-): Promise<Attribute> {
-    const response = await fetch(`${API_BASE_PATH}/products/${productId}/attributes`, {
+    appAttributeInput: AppTypes.AttributeInput,
+): Promise<AppTypes.Attribute> {
+    const apiPayload = Mappers.mapAppAttributeInputToApiAttributePayload(appAttributeInput); // ★マッピング★
+    const response = await fetch(`${API_PROXY_PATH}/products/${productId}/attributes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(attributeData),
+        body: JSON.stringify(apiPayload),
     });
-    // APIからのレスポンスはApiAttributeに近いが、フロントエンドのAttribute型で扱うことを想定
-    // もしAPIレスポンスがApiAttribute型なら、ここで変換が必要な場合もある
-    return handleApiResponse<Attribute>(response);
+    const createdApiAttribute = await handleApiResponse<AppTypes.ApiAttributeResponse>(response);
+    return Mappers.mapApiAttributeResponseToAppAttribute(createdApiAttribute); // ★マッピング★
 }
 
 /**
@@ -143,18 +145,20 @@ export async function addAttributeToProduct(
  */
 export async function updateProductAttribute(
     productId: number,
-    attributeId: number,
-    attributeData: AttributeInput,
-): Promise<Attribute> {
+    attributeId: number, // パスパラメータのattributeIdはアプリ内のキャメルケースのまま
+    appAttributeInput: AppTypes.AttributeInput,
+): Promise<AppTypes.Attribute> {
+    const apiPayload = Mappers.mapAppAttributeInputToApiAttributePayload(appAttributeInput); // ★マッピング★
     const response = await fetch(
-        `${API_BASE_PATH}/products/${productId}/attributes/${attributeId}`,
+        `${API_PROXY_PATH}/products/${productId}/attributes/${attributeId}`,
         {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(attributeData),
+            body: JSON.stringify(apiPayload),
         },
     );
-    return handleApiResponse<Attribute>(response);
+    const updatedApiAttribute = await handleApiResponse<AppTypes.ApiAttributeResponse>(response);
+    return Mappers.mapApiAttributeResponseToAppAttribute(updatedApiAttribute); // ★マッピング★
 }
 
 /**
@@ -166,12 +170,12 @@ export async function deleteProductAttribute(
     attributeId: number,
 ): Promise<void> {
     const response = await fetch(
-        `${API_BASE_PATH}/products/${productId}/attributes/${attributeId}`,
+        `${API_PROXY_PATH}/products/${productId}/attributes/${attributeId}`,
         {
             method: 'DELETE',
         },
     );
-    await handleApiResponse<void>(response);
+    await handleApiResponse<void>(response); // レスポンスボディがない場合はマッピング不要
 }
 
 // --- Parameter Operations ---
@@ -183,17 +187,19 @@ export async function deleteProductAttribute(
 export async function addParamToAttribute(
     productId: number,
     attributeId: number,
-    paramData: ParamItemInput,
-): Promise<ParamItem> {
+    appParamInput: AppTypes.ParamItemInput,
+): Promise<AppTypes.ParamItem> {
+    const apiPayload = Mappers.mapAppParamItemInputToApiParamItemPayload(appParamInput); // ★マッピング★
     const response = await fetch(
-        `${API_BASE_PATH}/products/${productId}/attributes/${attributeId}/params`,
+        `${API_PROXY_PATH}/products/${productId}/attributes/${attributeId}/params`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramData),
+            body: JSON.stringify(apiPayload),
         },
     );
-    return handleApiResponse<ParamItem>(response);
+    const createdApiParam = await handleApiResponse<AppTypes.ApiParamItemResponse>(response);
+    return Mappers.mapApiParamItemResponseToAppParamItem(createdApiParam); // ★マッピング★
 }
 
 /**
@@ -204,18 +210,20 @@ export async function addParamToAttribute(
 export async function updateAttributeParam(
     productId: number,
     attributeId: number,
-    paramId: number,
-    paramData: ParamItemInput,
-): Promise<ParamItem> {
+    paramId: number, // パスパラメータのparamIdはアプリ内のキャメルケースのまま
+    appParamInput: AppTypes.ParamItemInput,
+): Promise<AppTypes.ParamItem> {
+    const apiPayload = Mappers.mapAppParamItemInputToApiParamItemPayload(appParamInput); // ★マッピング★
     const response = await fetch(
-        `${API_BASE_PATH}/products/${productId}/attributes/${attributeId}/params/${paramId}`,
+        `${API_PROXY_PATH}/products/${productId}/attributes/${attributeId}/params/${paramId}`,
         {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramData),
+            body: JSON.stringify(apiPayload),
         },
     );
-    return handleApiResponse<ParamItem>(response);
+    const updatedApiParam = await handleApiResponse<AppTypes.ApiParamItemResponse>(response);
+    return Mappers.mapApiParamItemResponseToAppParamItem(updatedApiParam); // ★マッピング★
 }
 
 /**
@@ -228,7 +236,7 @@ export async function deleteAttributeParam(
     paramId: number,
 ): Promise<void> {
     const response = await fetch(
-        `${API_BASE_PATH}/products/${productId}/attributes/${attributeId}/params/${paramId}`,
+        `${API_PROXY_PATH}/products/${productId}/attributes/${attributeId}/params/${paramId}`,
         {
             method: 'DELETE',
         },
@@ -236,13 +244,9 @@ export async function deleteAttributeParam(
     await handleApiResponse<void>(response);
 }
 
-// --- Utility Operations ---
-/**
- * モックデータを初期状態にリセットします。
- */
+// --- Utility API Functions ---
 export async function refreshMockData(): Promise<{ message: string }> {
-    const response = await fetch(`${API_BASE_PATH}/refresh`, {
-        method: 'POST',
-    });
+    const response = await fetch(`${API_PROXY_PATH}/refresh`, { method: 'POST' });
+    // このレスポンスはシンプルなため、直接型を指定するか、必要ならマッパーを用意
     return handleApiResponse<{ message: string }>(response);
 }

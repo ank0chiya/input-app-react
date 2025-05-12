@@ -124,6 +124,93 @@ export interface ApiProduct {
     sortOrder: number;
 }
 
+// --- API v1.3.1 Response Schemas (Snake Case, new key names) ---
+export interface ApiParamBaseResponse {
+    param_id: number;
+    sort_order: number;
+}
+export interface ApiParamType1ItemResponse extends ApiParamBaseResponse {
+    type: 'type1';
+    code: string;
+    disp_name: string;
+}
+export interface ApiParamType2ItemResponse extends ApiParamBaseResponse {
+    type: 'type2';
+    min: number;
+    increment: number;
+}
+export interface ApiParamType3ItemResponse extends ApiParamBaseResponse {
+    type: 'type3';
+    code: string;
+    disp_name: string;
+}
+export type ApiParamItemResponse =
+    | ApiParamType1ItemResponse
+    | ApiParamType2ItemResponse
+    | ApiParamType3ItemResponse;
+
+export interface ApiAttributeResponse {
+    attribute_id: number;
+    code: string; // formerly 'attribute' in app types
+    data_type: string; // formerly 'attributeType'
+    disp_name: string; // formerly 'attributeJP'
+    unit: string; // formerly 'attributeUnit'
+    params: ApiParamItemResponse[]; // Uses API param types
+    contract: string;
+    public: boolean;
+    masking: boolean;
+    online: boolean;
+    sort_order: number;
+}
+
+export interface ApiProductResponse {
+    prod_id: number; // formerly 'productId'
+    prefix: string;
+    prd_type: string; // formerly 'type'
+    cfg_type: string; // formerly 'cfgType'
+    attributes: ApiAttributeResponse[];
+    sort_order: number;
+}
+
+// --- API v1.3.1 Input Schemas (Snake Case, new key names) ---
+export interface ApiAttributeInputPayload {
+    // OpenAPIのAttributeInputに一致
+    code: string;
+    data_type: string;
+    disp_name: string;
+    unit: string;
+    contract: string;
+    public: boolean;
+    masking: boolean;
+    online: boolean;
+    sort_order: number;
+    // 'params' は含まれない
+}
+
+export interface ApiParamBaseInputPayload {
+    // OpenAPIのParamBaseInputに一致
+    sort_order: number;
+}
+export interface ApiParamType1InputPayload extends ApiParamBaseInputPayload {
+    type: 'type1';
+    code: string;
+    disp_name: string;
+}
+export interface ApiParamType2InputPayload extends ApiParamBaseInputPayload {
+    type: 'type2';
+    min: number;
+    increment: number;
+}
+export interface ApiParamType3InputPayload extends ApiParamBaseInputPayload {
+    type: 'type3';
+    code: string;
+    disp_name: string;
+}
+export type ApiParamItemInputPayload =
+    | ApiParamType1InputPayload
+    | ApiParamType2InputPayload
+    | ApiParamType3InputPayload; // OpenAPIのParamItemInputに一致
+
 export interface BaseTableTopRow {
     prefix: Product['prefix'];
     type: Product['type'];
