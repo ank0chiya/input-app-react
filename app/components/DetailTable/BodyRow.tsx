@@ -23,20 +23,26 @@ function isParamType2(param: ParamDetail | null | undefined): param is ParamType
     return !!param && param.type === 'type2';
 }
 
-const BodyRow: React.FC<BodyRowProps> = ({
+export default function BodyRow({
     product,
     attribute,
     paramDetail,
     rowSpanCount,
     paramIndex,
     isFirstRowOfAttribute,
-}) => {
+}: BodyRowProps) {
     const isLastParam = rowSpanCount - 1 === paramIndex;
-
+    console.log('paramDetail', paramDetail);
     const { handleParamChange, handleAttributeChange } = usePattern();
     // ユニークキー (paramDetailが存在しない場合も考慮)
     const uniqueKey = `${product.productId}-${attribute.attributeId}-${paramDetail?.paramId ?? 'attr-only'}-${isFirstRowOfAttribute ? 'first' : 'other'}`;
 
+    const paramCellSx = {
+        backgroundColor:
+            paramDetail?._status === 'deleted'
+                ? 'rgba(255, 0, 0, 0.1)' // 'deleted' の場合の背景色
+                : undefined, // 'deleted' でない場合は undefined (何も設定しない)
+    };
     // --- Helper function to create onChange handlers --- (変更なし)
     const createChangeHandler =
         (handler: (...args: any[]) => void, ...prefixArgs: (string | number | undefined)[]) =>
@@ -64,25 +70,37 @@ const BodyRow: React.FC<BodyRowProps> = ({
     );
 
     // --- Render Parameter Cells
-    let codeCell = <EmptyCell />;
-    let dispNameCell = <EmptyCell />;
-    let minCell = <EmptyCell />;
-    let incrementCell = <EmptyCell />;
+    let codeCell = <EmptyCell sx={paramCellSx} />;
+    let dispNameCell = <EmptyCell sx={paramCellSx} />;
+    let minCell = <EmptyCell sx={paramCellSx} />;
+    let incrementCell = <EmptyCell sx={paramCellSx} />;
 
     if (isParamType1Or3(paramDetail)) {
-        codeCell = <TextFieldCell value={paramDetail.code} onChange={createParamHandler('code')} />;
+        codeCell = (
+            <TextFieldCell
+                sx={paramCellSx}
+                value={paramDetail.code}
+                onChange={createParamHandler('code')}
+            />
+        );
         dispNameCell = (
-            <TextFieldCell value={paramDetail.dispName} onChange={createParamHandler('dispName')} />
+            <TextFieldCell
+                sx={paramCellSx}
+                value={paramDetail.dispName}
+                onChange={createParamHandler('dispName')}
+            />
         );
     } else if (isParamType2(paramDetail)) {
         minCell = (
             <NumberFieldCell
+                sx={paramCellSx}
                 value={paramDetail.min} // Pass number or string
                 onChange={createParamHandler('min')}
             />
         );
         incrementCell = (
             <NumberFieldCell
+                sx={paramCellSx}
                 value={paramDetail.increment} // Pass number or string
                 onChange={createParamHandler('increment')}
             />
@@ -137,6 +155,4 @@ const BodyRow: React.FC<BodyRowProps> = ({
             />
         </TableRow>
     );
-};
-
-export default BodyRow;
+}

@@ -10,6 +10,7 @@ import {
     Select,
     MenuItem,
     Checkbox,
+    Typography,
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'; // パラメータ追加アイコン
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'; // 行追加アイコン
@@ -22,6 +23,17 @@ import { usePattern } from './contexts/BaseTableContext';
 import { Attribute } from '@/app/types';
 import { Paragliding } from '@mui/icons-material';
 import { SxProps, Theme } from '@mui/material';
+
+export function ReadOnlyCell({ rowSpan, value }: { rowSpan: number; value: string }) {
+    return (
+        <TableCell rowSpan={rowSpan}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {value}
+            </Typography>
+        </TableCell>
+    );
+}
+
 export function TextFieldCell({
     sx,
     rowSpan,

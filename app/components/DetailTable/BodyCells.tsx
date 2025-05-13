@@ -9,6 +9,7 @@ import {
     Box,
     type TableCellProps,
 } from '@mui/material';
+import { SxProps, Theme } from '@mui/material';
 import { Attribute, Product, ParamDetail } from '@/app/types';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -27,10 +28,12 @@ interface ReadOnlyCellProps extends CellBaseProps {
     value: string | number | undefined;
 }
 interface TextFieldCellProps extends CellBaseProps {
+    sx: SxProps<Theme>;
     value: string | number;
     onChange: (v: string | number) => void;
 }
 interface NumberFieldCellProps extends CellBaseProps {
+    sx: SxProps<Theme>;
     value: number | string;
     onChange: (v: number) => void;
 }
@@ -38,7 +41,9 @@ interface CheckboxCellProps extends CellBaseProps {
     value: boolean;
     onChange: (v: boolean) => void;
 }
-interface EmptyCellProps extends CellBaseProps {} // EmptyCell も align/valign を持つ可能性がある
+interface EmptyCellProps extends CellBaseProps {
+    sx: SxProps<Theme>;
+} // EmptyCell も align/valign を持つ可能性がある
 // --- ActionCell Props Definition ---
 interface ActionFieldCellProps {
     product: Product;
@@ -62,6 +67,7 @@ export function ReadOnlyCell({ rowSpan, value }: ReadOnlyCellProps) {
 }
 
 export function TextFieldCell({
+    sx, 
     value,
     onChange,
     rowSpan,
@@ -85,7 +91,7 @@ export function TextFieldCell({
     };
 
     return (
-        <TableCell rowSpan={rowSpan} align={align} valign={valign} sx={{ p: 0 }}>
+        <TableCell rowSpan={rowSpan} align={align} valign={valign} sx={{ ...sx, p: 0 }}>
             <TextField
                 value={currentValue}
                 onChange={handleChange}
@@ -100,6 +106,7 @@ export function TextFieldCell({
 }
 
 export function NumberFieldCell({
+    sx, 
     value,
     onChange,
     rowSpan,
@@ -135,7 +142,7 @@ export function NumberFieldCell({
     };
 
     return (
-        <TableCell rowSpan={rowSpan} align={align} valign={valign} sx={{ p: 0 }}>
+        <TableCell rowSpan={rowSpan} align={align} valign={valign} sx={{ ...sx, p: 0 }}>
             <TextField
                 type="number"
                 value={currentValue}
@@ -169,9 +176,9 @@ export function CheckboxCell({
 }
 
 // --- EmptyCell ---
-export function EmptyCell({ rowSpan }: EmptyCellProps) {
+export function EmptyCell({ sx, rowSpan }: EmptyCellProps) {
     return (
-        <TableCell rowSpan={rowSpan} sx={{ padding: '4px 8px' }}>
+        <TableCell rowSpan={rowSpan} sx={{ ...sx, padding: '4px 8px' }}>
             {/* &nbsp; */}
         </TableCell>
     );

@@ -10,6 +10,7 @@ import {
     AddRowTooltip,
     DeleteRowTooltip,
     AddAttributeTooltip,
+    ReadOnlyCell,
 } from './BodyCells';
 import React from 'react';
 
@@ -26,9 +27,9 @@ function EmptyAttribute(row: Product, rowIndex: number, tableDataLength: number)
                 },
             }}
         >
-            <TextFieldCell rowSpan={1} value={row.prefix} columnId="prefix" rowIndex={rowIndex} />
-            <TextFieldCell rowSpan={1} value={row.type} columnId="prefix" rowIndex={rowIndex} />
-            <TextFieldCell rowSpan={1} value={row.cfgType} columnId="prefix" rowIndex={rowIndex} />
+            <ReadOnlyCell rowSpan={1} value={row.prefix} />
+            <ReadOnlyCell rowSpan={1} value={row.type} />
+            <ReadOnlyCell rowSpan={1} value={row.cfgType} />
             <TableCell
                 colSpan={8}
                 align="center"
@@ -86,27 +87,9 @@ function AttributeRow({
         >
             {isFirstAttribute && (
                 <>
-                    <TextFieldCell
-                        sx={attributeSx}
-                        rowSpan={rowSpanCount}
-                        value={row.prefix}
-                        columnId="prefix"
-                        rowIndex={rowIndex}
-                    />
-                    <TextFieldCell
-                        sx={attributeSx}
-                        rowSpan={rowSpanCount}
-                        value={row.type}
-                        columnId="type"
-                        rowIndex={rowIndex}
-                    />
-                    <TextFieldCell
-                        sx={attributeSx}
-                        rowSpan={rowSpanCount}
-                        value={row.cfgType}
-                        columnId="cfgType"
-                        rowIndex={rowIndex}
-                    />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={row.prefix} />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={row.type} />
+                    <ReadOnlyCell rowSpan={rowSpanCount} value={row.cfgType} />
                 </>
             )}
             <TextFieldCell

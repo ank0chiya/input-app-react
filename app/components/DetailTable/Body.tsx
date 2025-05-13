@@ -6,11 +6,11 @@ import BodyRow from './BodyRow'; // 作成した BodyRow コンポーネント�
 import type { TableBodyProps } from '@/app/types';
 import { usePattern } from './contexts/DetailTableContext';
 
-const DetailTableBody: React.FC<TableBodyProps> = ({ products }) => {
-    const { paramsMap } = usePattern();
+export default function DetailTableBody() {
+    const { tableData, paramsMap } = usePattern();
     return (
         <TableBody>
-            {products
+            {tableData
                 .sort((a, b) => a.sortOrder - b.sortOrder)
                 .map((product) =>
                     product.attributes
@@ -31,7 +31,7 @@ const DetailTableBody: React.FC<TableBodyProps> = ({ products }) => {
                             // Array.from でループし、各反復で BodyRow を呼び出す
                             return Array.from({ length: rowSpanCount }).map((_, paramIndex) => {
                                 const paramDetail = params[paramIndex];
-                                const isFirstRowOfParam= paramIndex === 0;
+                                const isFirstRowOfParam = paramIndex === 0;
 
                                 // BodyRow に必要な props を渡す
                                 return (
@@ -51,6 +51,4 @@ const DetailTableBody: React.FC<TableBodyProps> = ({ products }) => {
                 )}
         </TableBody>
     );
-};
-
-export default DetailTableBody;
+}

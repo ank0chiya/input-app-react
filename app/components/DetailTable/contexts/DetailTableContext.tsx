@@ -142,10 +142,10 @@ export function DetailTableProvider({
         (productId: number, attributeId: number, afterParamId?: number) => {
             const newParamId = tempParamIdCounterDetailCtx--;
             const contract = getAttributeContract(productId, attributeId);
-            
+
             setParamsData((prevList) =>
                 prevList.map((pl) => {
-                    console.log(baseTableData)
+                    console.log(baseTableData);
                     if (pl.productId === productId && pl.attributeId === attributeId) {
                         const currentParamArray = pl.param || [];
                         let insertIndex = currentParamArray.length;
@@ -177,7 +177,7 @@ export function DetailTableProvider({
                             param: newParamList as ParamType1[] | ParamType2[] | ParamType3[],
                         };
                     }
-                    console.log('contract', contract)
+                    console.log('contract', contract);
                     return pl;
                 }),
             );
@@ -187,41 +187,84 @@ export function DetailTableProvider({
 
     const handleDeleteParam = useCallback(
         (productId: number, attributeId: number, paramId: number) => {
-            setParamsData((prevList) =>
-                prevList.map((pl) => {
+            setParamsData((prevParamsList) =>
+                prevParamsList.map((pl) => {
                     if (pl.productId === productId && pl.attributeId === attributeId) {
-                        const paramToDelete = (pl.param || []).find((p) => p.paramId === paramId);
-                        if (!paramToDelete) return pl;
-                        let newParamList;
-                        if (paramToDelete._status === 'new') {
-                            newParamList = pl.param.filter((p) => p.paramId !== paramId);
+                        const currentParamArray = pl.param || [];
+                        const paramIndex = currentParamArray.findIndex(
+                            (p) => p.paramId === paramId,
+                        );
+
+                        if (paramIndex === -1) {
+                            // 対象のParamが見つからない場合はそのまま返す
+                            return pl;
+                        }
+
+                        const paramToToggle = currentParamArray[paramIndex];
+                        let updatedParamListStaged: ParamDetail[];
+
+                        if (paramToToggle._status === 'new') {
+                            // --- 'new' ステータスのアイテムの場合 ---
+                            // リストから物理的に削除します。
+                            updatedParamListStaged = currentParamArray.filter(
+                                (p) => p.paramId !== paramId,
+                            );
                         } else {
-                            newParamList = pl.param.map((p) =>
-                                p.paramId === paramId
-                                    ? { ...p, _status: 'deleted' as ChangeStatus }
-                                    : p,
+                            // --- 'synced', 'updated', 'deleted' ステータスのアイテムの場合 ---
+                            // ステータスをトグルします。
+                            const newStatus: ChangeStatus =
+                                paramToToggle._status === 'deleted'
+                                    ? 'updated' // 'deleted' から戻す場合は 'updated' (変更ありとみなす)
+                                    : 'deleted'; // それ以外は 'deleted' に設定
+
+                            updatedParamListStaged = currentParamArray.map((p, idx) =>
+                                idx === paramIndex ? { ...p, _status: newStatus } : p,
                             );
                         }
-                        const activeItems = newParamList.filter((p) => p._status !== 'deleted');
-                        activeItems
-                            .sort((a, b) => a.sortOrder - b.sortOrder)
-                            .forEach((p, idx) => (p.sortOrder = idx));
-                        const finalParamList = newParamList
-                            .map((originalParam) =>
-                                originalParam.paramId === paramToDelete.paramId &&
-                                paramToDelete._status !== 'new'
-                                    ? { ...originalParam, _status: 'deleted' as ChangeStatus }
-                                    : activeItems.find(
-                                          (a) => a.paramId === originalParam.paramId,
-                                      ) || originalParam,
-                            )
-                            .filter(
-                                (p) =>
-                                    !(
-                                        p.paramId === paramToDelete.paramId &&
-                                        paramToDelete._status === 'new'
-                                    ),
-                            );
+
+                        // --- アクティブなアイテム (削除マークが付いていないもの) でソート順を正規化 ---
+                        const activeItems = updatedParamListStaged.filter(
+                            (p) => p._status !== 'deleted',
+                        );
+
+                        // 既存のsortOrderを尊重しつつソート
+                        activeItems.sort(
+                            (a, b) => (a.sortOrder ?? Infinity) - (b.sortOrder ?? Infinity),
+                        );
+
+                        // ソートされたアクティブなアイテムに新しい連番のsortOrderを振り、
+                        // ステータスも適切に更新する
+                        const activeItemsWithNewSortOrder = activeItems.map((p, newIndex) => {
+                            let currentStatus = p._status;
+                            // 削除から復元されたアイテムは 'updated' (これはnewStatusで既に設定されているか確認)
+                            if (
+                                p.paramId === paramToToggle.paramId &&
+                                paramToToggle._status === 'deleted'
+                            ) {
+                                currentStatus = 'updated';
+                            }
+                            // sortOrderが実際に変更された場合も 'updated' にする (新規でなければ)
+                            else if (p.sortOrder !== newIndex && p._status !== 'new') {
+                                currentStatus = 'updated';
+                            }
+                            return { ...p, sortOrder: newIndex, _status: currentStatus };
+                        });
+
+                        // 最終的なParamリストを再構築
+                        // (削除マークが付いたものも含め、アクティブなものは更新された状態)
+                        const finalParamList = updatedParamListStaged
+                            .map((p) => {
+                                if (p._status === 'deleted') {
+                                    return p; // 削除マークが付いたものはそのまま (sortOrderも元のまま)
+                                }
+                                // 'new' で物理削除されたアイテムは updatedParamListStaged には既に含まれない
+                                const updatedActiveItem = activeItemsWithNewSortOrder.find(
+                                    (a) => a.paramId === p.paramId,
+                                );
+                                return updatedActiveItem || p; // 通常、activeなアイテムはupdatedActiveItemで見つかる
+                            })
+                            .filter((p) => p); // 念のためundefinedな要素を除去 (通常は発生しない)
+
                         return {
                             ...pl,
                             param: finalParamList as ParamType1[] | ParamType2[] | ParamType3[],
@@ -343,11 +386,11 @@ export function DetailTableProvider({
     };
 
     const handleMoveParamUp = useCallback(
-        (pId, aId, paramId) => moveParam(pId, aId, paramId, 'up'),
+        (pId: number, aId: number, paramId: number) => moveParam(pId, aId, paramId, 'up'),
         [moveParam],
     );
     const handleMoveParamDown = useCallback(
-        (pId, aId, paramId) => moveParam(pId, aId, paramId, 'down'),
+        (pId: number, aId: number, paramId: number) => moveParam(pId, aId, paramId, 'down'),
         [moveParam],
     );
 

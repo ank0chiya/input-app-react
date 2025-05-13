@@ -31,7 +31,7 @@ const RowSpanEditableTable: React.FC<BaseTableProps> = ({
                     setProductData={setProductData}
                     setParamsData={setParamsData}
                 >
-                    <DetailTableBody products={baseTableData} />
+                    <DetailTableBody />
                 </DetailTableProvider>
             </Table>
         </TableContainer>
