@@ -7,7 +7,6 @@ import {
     Product,
     Params,
     Attribute,
-    ApiProduct,
     ParamType1,
     ParamType2,
     ParamType3,
@@ -73,9 +72,9 @@ let globalTempParamIdCounter = -1;
 export default function TabbedDataManager() {
     const [baseTableData, setProductData] = useState<Product[]>([]); // 初期値を空配列に
     const [detailTableData, setParamsData] = useState<Params[]>([]); // 初期値を空配列に
-    const [loading, setLoading] = useState<boolean>(true); // ローディング状態を追加
+    const [initialLoading, setInitialLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null); // エラー状態を追加
-    const [saving, setSaving] = useState<boolean>(false);
+    const [isSaving, setIsSaving] = useState<boolean>(false);
     const [activeTab, setActiveTab] = useState(0); // タブの状態を管理
 
     // タブが変更されたときのハンドラ
@@ -83,9 +82,27 @@ export default function TabbedDataManager() {
         setActiveTab(newValue);
     };
 
+    const isOverallDirty = useMemo(() => {
+        // ... (このロジックはアプリ内型(キャメルケース)で動作する前提)
+        const isBaseDirty = baseTableData.some(
+            (product) =>
+                (product._status && product._status !== 'synced') ||
+                (product.attributes || []).some(
+                    (attribute) => attribute._status && attribute._status !== 'synced',
+                ),
+        );
+        const isDetailDirty = detailTableData.some((paramsEntry) =>
+            (paramsEntry.param || []).some(
+                (paramItem) => paramItem._status && paramItem._status !== 'synced',
+            ),
+        );
+        return isBaseDirty || isDetailDirty;
+    }, [baseTableData, detailTableData]);
+    // この isOverallDirty は ButtonManager の isSaveDisabled プロパティなどに渡して使用します。
+    // 例: isSaveDisabled={!isOverallDirty || isSaving || loading}
     const loadInitialData = useCallback(
         async (showSpinner = true) => {
-            if (showSpinner) setLoading(true);
+            if (showSpinner) setInitialLoading(true);
             setError(null);
             try {
                 const { products, paramsList } = await fetchAllProductsForDisplay();
@@ -122,7 +139,7 @@ export default function TabbedDataManager() {
                 console.error('Failed to fetch data via apiClient:', e);
                 setError(e.message || 'データの取得中にエラーが発生しました。');
             } finally {
-                if (showSpinner) setLoading(false);
+                if (showSpinner) setInitialLoading(false);
             }
         },
         [setProductData, setParamsData],
@@ -175,45 +192,22 @@ export default function TabbedDataManager() {
                 return;
             }
         }
-        setSaving(true);
+        setIsSaving(true); // 処理中フラグを立てる
+        setError(null);
         try {
-            await refreshMockData(); // APIでサーバー側データをリセット
-            await loadInitialData(false); // フロントエンドも再ロード
+            await refreshMockData();
+            await loadInitialData(false);
             alert('データがリフレッシュされました。');
         } catch (e: any) {
             setError(e.message || 'データのリフレッシュ中にエラーが発生しました。');
         } finally {
-            setSaving(false);
+            setIsSaving(false);
         }
-    }, [loadInitialData /* isOverallDirty を依存配列に追加 */]); // isOverallDirtyの計算をここでも行うか、propsで渡す
-
-    // 全体のisDirty状態
-    const isOverallDirty = useMemo(() => {
-        const isBaseDirty = baseTableData.some(
-            (p) =>
-                (p._status && p._status !== 'synced') ||
-                (p.attributes || []).some((a) => a._status && a._status !== 'synced'),
-        );
-        const isDetailDirty = detailTableData.some((pl) =>
-            (pl.param || []).some((p) => p._status && p._status !== 'synced'),
-        );
-        return isBaseDirty || isDetailDirty;
-    }, [baseTableData, detailTableData]);
-
-    // handleDataRefresh の依存配列に isOverallDirty を追加
-    useEffect(() => {
-        // isOverallDirty が変更されたときに handleDataRefresh を再生成する必要はないが、
-        // handleDataRefresh の中で isOverallDirty を参照しているため、
-        // 正確には isOverallDirty の値を handleDataRefresh の中で使うなら依存配列に入れるべき。
-        // ただし、ここでは window.confirm の中で使っているだけなので、
-        // 最新の isOverallDirty を参照するために、useCallbackの外部で計算し、
-        // useCallbackの依存配列からは外すか、useCallbackを使わないという選択肢もある。
-        // 今回は上記handleDataRefreshの実装で依存配列から外しておく。
-    }, [isOverallDirty]);
+    }, [loadInitialData, isOverallDirty]);
 
     // 「登録」ボタンが押されたときのグローバルな保存処理
     const handleGlobalSaveChanges = useCallback(async () => {
-        setLoading(true); // 保存処理中のローディング表示
+        setIsSaving(true); // 保存処理中のローディング表示
         setError(null);
         let overallSuccess = true;
         // 仮IDとサーバーIDのマッピングを保持（ParamsのattributeId更新用）
@@ -442,7 +436,7 @@ export default function TabbedDataManager() {
         );
         setParamsData(finalParamsDataList);
 
-        setSaving(false);
+        setIsSaving(false);
 
         if (overallSuccess) {
             alert('変更が保存されました。\n(Product自体の新規/更新/削除APIはログ出力のみです。)');
@@ -453,8 +447,76 @@ export default function TabbedDataManager() {
         } else {
             setError('一部の変更の保存に失敗しました。詳細はコンソールを確認してください。');
         }
-    }, [baseTableData, detailTableData, setProductData, setParamsData]);
+    }, [baseTableData, detailTableData, setProductData, setParamsData, loadInitialData, error]);
 
+    // ButtonManagerからリストアされたデータを受け取ってstateを更新するコールバック
+    const handleDataRestoredFromButtonManager = useCallback(
+        (restoredData: { baseTableData: Product[]; detailTableData: Params[] }) => {
+            setIsSaving(true); // リストア処理中もローディング/処理中とみなす
+            setError(null);
+            try {
+                setProductData(restoredData.baseTableData);
+                setParamsData(restoredData.detailTableData);
+
+                // 仮IDカウンターをリセット
+                globalTempProductIdCounter = -1;
+                globalTempAttributeIdCounter = -1;
+                globalTempParamIdCounter = -1;
+
+                // isOverallDirty はリストアされたデータの _status に基づいて再計算される
+                alert('データがファイルからリストアされました。'); // メッセージはButtonManager側で出しても良い
+            } catch (e: any) {
+                setError(e.message || 'リストアデータの適用中にエラーが発生しました。');
+            } finally {
+                setIsSaving(false);
+            }
+        },
+        [setProductData, setParamsData],
+    );
+
+    if (initialLoading && !isSaving) {
+        // 初期ロード中 (かつ他の操作中でない)
+        return (
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100vh',
+                }}
+            >
+                <CircularProgress />{' '}
+                <Box component="span" sx={{ ml: 2 }}>
+                    Loading data...
+                </Box>
+            </Box>
+        );
+    }
+    // isSaving 中の専用ローディング表示 (任意)
+    if (isSaving) {
+        return (
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100vh',
+                }}
+            >
+                <CircularProgress />{' '}
+                <Box component="span" sx={{ ml: 2 }}>
+                    Processing...
+                </Box>
+            </Box>
+        );
+    }
+    if (error) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="error">Error: {error}</Alert>
+            </Box>
+        );
+    }
 
     return (
         <>
@@ -462,8 +524,11 @@ export default function TabbedDataManager() {
                 baseTableData={baseTableData}
                 detailTableData={detailTableData}
                 onSaveRequest={handleGlobalSaveChanges}
-                isSaveDisabled={!isOverallDirty || saving || loading}
+                isSaveDisabled={!isOverallDirty || isSaving || initialLoading} // 保存ボタンの有効/無効
                 onRefreshRequest={handleDataRefresh}
+                isProcessing={isSaving} // 統一的な処理中フラグ
+                onDataRestoredAction={handleDataRestoredFromButtonManager} // コールバックを渡す
+                isOverallDirty={isOverallDirty}
             />
             <Box sx={{ width: '100%' }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

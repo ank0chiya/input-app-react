@@ -222,20 +222,24 @@ export function CheckboxCell({
     rowIndex: number;
     attributeIndex: number;
 }) {
-    const { handleAttributeCellChange } = usePattern();
+    const { handleAttributeCellChange, handleAttributeParamHasChange } = usePattern();
     return (
         <TableCell sx={{ ...sx }} rowSpan={rowSpan} align="center">
             <Checkbox
                 size="small"
                 checked={value}
-                onChange={(e) =>
-                    handleAttributeCellChange(
-                        rowIndex,
-                        attributeIndex,
-                        columnId as keyof Pick<Attribute, 'public' | 'masking'>,
-                        e.target.checked,
-                    )
-                }
+                onChange={(e) => {
+                    if (columnId === 'paramHas') {
+                        handleAttributeParamHasChange(rowIndex, attributeIndex, e.target.checked);
+                    } else {
+                        handleAttributeCellChange(
+                            rowIndex,
+                            attributeIndex,
+                            columnId as keyof Pick<Attribute, 'public' | 'masking'>,
+                            e.target.checked,
+                        );
+                    }
+                }}
             />
         </TableCell>
     );

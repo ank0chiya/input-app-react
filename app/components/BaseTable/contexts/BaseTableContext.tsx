@@ -403,6 +403,7 @@ export function BaseTableProvider({
                                                 ? 'new'
                                                 : ('updated' as ChangeStatus),
                                     };
+                                    onAddParamsDataRow(product, attributeWithNewParamHas);
                                     return attributeWithNewParamHas;
                                 }
                                 return attr;
@@ -412,10 +413,6 @@ export function BaseTableProvider({
                     return p;
                 }),
             );
-
-            if (attributeWithNewParamHas) {
-                onAddParamsDataRow(product, attributeWithNewParamHas);
-            }
         },
         [baseTableData, setProductData, markProductAsModified, onAddParamsDataRow],
     );

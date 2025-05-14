@@ -143,6 +143,7 @@ export function DetailTableProvider({
             const newParamId = tempParamIdCounterDetailCtx--;
             const contract = getAttributeContract(productId, attributeId);
 
+            console.log('handleaddParam')
             setParamsData((prevList) =>
                 prevList.map((pl) => {
                     console.log(baseTableData);
@@ -354,37 +355,6 @@ export function DetailTableProvider({
         [setParamsData],
     );
 
-    const paramsDataType = (
-        newParamId: number,
-        contract: string | undefined,
-    ): ParamType1 | ParamType2 | ParamType3 => {
-        if (contract === 'type1') {
-            return {
-                paramId: newParamId,
-                type: 'type1' as const,
-                code: '',
-                dispName: '',
-                sortOrder: -1, // 仮のソート順
-            };
-        } else if (contract === 'type2') {
-            return {
-                paramId: newParamId,
-                type: 'type2' as const,
-                min: 0,
-                increment: 0,
-                sortOrder: -1, // 仮のソート順
-            };
-        } else {
-            return {
-                paramId: newParamId,
-                type: 'type3' as const,
-                code: '',
-                dispName: '',
-                sortOrder: -1, // 仮のソート順
-            };
-        }
-    };
-
     const handleMoveParamUp = useCallback(
         (pId: number, aId: number, paramId: number) => moveParam(pId, aId, paramId, 'up'),
         [moveParam],
@@ -393,24 +363,6 @@ export function DetailTableProvider({
         (pId: number, aId: number, paramId: number) => moveParam(pId, aId, paramId, 'down'),
         [moveParam],
     );
-
-    const getContractValue = (
-        products: Product[],
-        targetProductId: number,
-        targetAttributeId: number,
-    ): string | undefined => {
-        const product = products.find((p) => p.productId === targetProductId);
-
-        if (product) {
-            const attribute = product.attributes.find(
-                (attr) => attr.attributeId === targetAttributeId,
-            );
-            if (attribute) {
-                return attribute.contract;
-            }
-        }
-        return undefined;
-    };
 
     const value = {
         tableData: baseTableData,
