@@ -82,8 +82,16 @@ export default function TabbedDataManager() {
         setActiveTab(newValue);
     };
 
+    const getExpectedParamTypeFromContract = (contract?: string): 'type1' | 'type2' | 'type3' => {
+        if (contract === 'type1') {
+            return 'type1';
+        } else if (contract === 'type2') {
+            return 'type2';
+        }
+        return 'type3'; // contractが 'type1', 'type2' 以外 (空文字列 '' を含む) の場合のデフォルト
+    };
+
     const isOverallDirty = useMemo(() => {
-        // ... (このロジックはアプリ内型(キャメルケース)で動作する前提)
         const isBaseDirty = baseTableData.some(
             (product) =>
                 (product._status && product._status !== 'synced') ||
@@ -98,27 +106,29 @@ export default function TabbedDataManager() {
         );
         return isBaseDirty || isDetailDirty;
     }, [baseTableData, detailTableData]);
-    // この isOverallDirty は ButtonManager の isSaveDisabled プロパティなどに渡して使用します。
-    // 例: isSaveDisabled={!isOverallDirty || isSaving || loading}
+
     const loadInitialData = useCallback(
         async (showSpinner = true) => {
             if (showSpinner) setInitialLoading(true);
             setError(null);
             try {
+                // fetchAllProductsForDisplayはアプリ内型(Product[], Params[])を返すようにマッピング済みと想定
                 const { products, paramsList } = await fetchAllProductsForDisplay();
+
                 const initialTrackedProducts: Product[] = products.map((p) => ({
                     ...p,
                     _status: 'synced' as ChangeStatus,
                     attributes: (p.attributes || []).map((a) => ({
                         ...a,
                         _status: 'synced' as ChangeStatus,
-                        // APIからのAttribute.paramsをフロントエンドのParamItemにマップし_statusを付与
-                        // Attribute型自体にparamsは含めない方針だったが、APIレスポンスにはあるので、
-                        // ここでは一旦そのままにし、BaseTableContext内でparamHasの計算に使う
+                        // Attribute.params はAPIレスポンスに含まれる (マッピング後)
+                        // そのparams内の各要素にも_statusを付与
                         params: (a.params || []).map((param) => ({
                             ...param,
                             _status: 'synced' as ChangeStatus,
                         })),
+                        // paramHas は Attribute.params の有無で決定される
+                        paramHas: a.params != null && a.params.length > 0,
                     })),
                 }));
                 setProductData(initialTrackedProducts);
@@ -136,14 +146,14 @@ export default function TabbedDataManager() {
                 globalTempAttributeIdCounter = -1;
                 globalTempParamIdCounter = -1;
             } catch (e: any) {
-                console.error('Failed to fetch data via apiClient:', e);
-                setError(e.message || 'データの取得中にエラーが発生しました。');
+                console.error('Failed to fetch initial data:', e);
+                setError(e.message || 'データの初期ロード中にエラーが発生しました。');
             } finally {
                 if (showSpinner) setInitialLoading(false);
             }
         },
         [setProductData, setParamsData],
-    ); // set関数は依存配列に含めても安定している
+    );
 
     useEffect(() => {
         loadInitialData();
@@ -192,7 +202,7 @@ export default function TabbedDataManager() {
                 return;
             }
         }
-        setIsSaving(true); // 処理中フラグを立てる
+        setIsSaving(true);
         setError(null);
         try {
             await refreshMockData();
@@ -207,245 +217,257 @@ export default function TabbedDataManager() {
 
     // 「登録」ボタンが押されたときのグローバルな保存処理
     const handleGlobalSaveChanges = useCallback(async () => {
-        setIsSaving(true); // 保存処理中のローディング表示
+        setIsSaving(true);
         setError(null);
         let overallSuccess = true;
+
+        let currentProductsState: Product[] = JSON.parse(JSON.stringify(baseTableData));
+        let currentParamsListState: Params[] = JSON.parse(JSON.stringify(detailTableData));
+
         // 仮IDとサーバーIDのマッピングを保持（ParamsのattributeId更新用）
-        const attributeIdMap = new Map<number, number>();
-        // const paramIdMap = new Map<number, number>(); // 仮ParamID -> サーバーParamID (親子関係も考慮が必要)
+        const attributeIdMap = new Map<number, number>(); // <tempAttrId, serverAttrId>
+        // const paramIdMap = new Map<string, Map<number,number>>(); // 必要であれば
 
-        // Product と Attribute の変更を処理
-        let processedProducts: Product[] = JSON.parse(JSON.stringify(baseTableData)); // 作業用コピー
-
-        // --- Step 1: Productの処理 (今回はログのみ、実際はAPI呼び出し) ---
-        const finalProductsAfterProductOps: Product[] = [];
-        for (let i = 0; i < processedProducts.length; i++) {
-            const product = processedProducts[i];
-            let currentProductData = { ...product }; // APIレスポンスで更新される可能性
-
-            if (product._status === 'new' && product.productId < 0) {
-                console.log(`TODO: API POST Product (client ID: ${product.productId})`);
-                // const { _status, attributes, productId: tempPId, ...productInputData } = product;
-                // try {
-                //   const createdProduct = await apiClient.createProduct(productInputData as any);
-                //   currentProductData = { ...createdProduct, attributes: attributes || [], _status: 'synced' };
-                //   attributeIdMap.set(tempPId, createdProduct.productId); // Product IDのマッピング
-                // } catch (e) { overallSuccess = false; console.error(`P Create Err: ${e}`);}
-                currentProductData._status = 'synced'; // 仮
-            } else if (product._status === 'updated' && product.productId > 0) {
-                console.log(`TODO: API PUT Product ${product.productId}`);
-                currentProductData._status = 'synced'; // 仮
-            } else if (product._status === 'deleted' && product.productId > 0) {
-                console.log(`TODO: API DELETE Product ${product.productId}`);
-                // このProductは finalProductsAfterProductOps には追加しない
-                continue;
+        try {
+            // --- Phase 1: Process Products (DELETE, UPDATE, CREATE) ---
+            // (ProductのAPI呼び出しは未実装のため、ここでは主にAttributeとParamに影響するID処理を考慮)
+            const processedProductsAfterProductOps: Product[] = [];
+            for (const product of currentProductsState) {
+                if (product._status === 'deleted' && product.productId > 0) {
+                    console.log(`SIMULATE: API DELETE Product ${product.productId}`);
+                    // await deleteProduct(product.productId); // API呼び出し
+                    continue; // 削除されたものは以降の処理に含めない
+                }
+                // TODO: Productの新規作成(POST)と更新(PUT)処理
+                // 新規作成の場合はサーバーIDをproductIdに設定し、attributeIdMapのキーにも影響する
+                processedProductsAfterProductOps.push(product);
             }
-            finalProductsAfterProductOps.push(currentProductData);
-        }
-        processedProducts = finalProductsAfterProductOps;
+            currentProductsState = processedProductsAfterProductOps;
 
-        // --- Step 2: Attributeの処理 ---
-        for (const product of processedProducts) {
-            if (product.productId < 0) {
-                // 親Productが未保存(仮IDのまま)ならAttributeも保存できない
-                console.warn(
-                    `Attributes for new Product (client ID: ${product.productId}) will not be saved until Product is saved.`,
+            // --- Phase 2: Process Attributes (DELETE, UPDATE, CREATE) ---
+            for (const product of currentProductsState) {
+                if (!product.attributes) product.attributes = []; // attributesがない場合初期化
+                let finalAttributesForProduct: Attribute[] = [];
+                const attributesToDelete = product.attributes.filter(
+                    (attr) => attr._status === 'deleted' && attr.attributeId > 0,
                 );
-                continue;
-            }
-
-            const finalAttributesForThisProduct: Attribute[] = [];
-            const attributesToProcess = [...(product.attributes || [])];
-            for (const attr of attributesToProcess) {
-                const {
-                    _status,
-                    attributeId: clientAttributeId,
-                    params: localParams,
-                    paramHas: localParamHas,
-                    sortOrder,
-                    ...attrDataForApi
-                } = attr;
-                const attributeApiInput: AttributeInput = {
-                    ...(attrDataForApi as Omit<
-                        Attribute,
-                        | 'attributeId'
-                        | 'params'
-                        | 'paramHas'
-                        | '_status'
-                        | 'sortOrder'
-                        | '_original'
-                    >),
-                    sortOrder,
-                };
-                try {
-                    if (_status === 'new') {
-                        const created = await addAttributeToProduct(
-                            product.productId,
-                            attributeApiInput,
-                        );
-                        attributeIdMap.set(clientAttributeId, created.attributeId); // マップに保存
-                        finalAttributesForThisProduct.push({
-                            ...created,
-                            params: created.params || [],
-                            paramHas: !!(created.params && created.params.length > 0),
-                            _status: 'synced',
-                        });
-                    } else if (_status === 'updated') {
-                        const updated = await updateProductAttribute(
-                            product.productId,
-                            attr.attributeId,
-                            attributeApiInput,
-                        );
-                        finalAttributesForThisProduct.push({
-                            ...updated,
-                            params: localParams,
-                            paramHas: localParamHas,
-                            _status: 'synced',
-                        });
-                    } else if (_status === 'deleted' && attr.attributeId > 0) {
+                for (const attr of attributesToDelete) {
+                    try {
                         await deleteProductAttribute(product.productId, attr.attributeId);
-                        // 削除成功時はfinalAttributesForThisProductに追加しない
+                    } catch (e: any) {
+                        overallSuccess = false;
+                        console.error(
+                            `Failed to delete attribute ${attr.attributeId}:`,
+                            e,
+                        ); /* エラー時はリストに残すか検討 */
+                    }
+                }
+
+                const attributesToKeepOrUpdate = product.attributes.filter(
+                    (attr) => !(attr._status === 'deleted' && attr.attributeId > 0),
+                );
+                for (const attr of attributesToKeepOrUpdate) {
+                    const clientAttributeId = attr.attributeId;
+                    const {
+                        _status,
+                        attributeId,
+                        params: localParams,
+                        paramHas: localParamHas,
+                        ...attrInputData
+                    } = attr;
+
+                    if (_status === 'new' && clientAttributeId < 0 && product.productId > 0) {
+                        try {
+                            const createdApiAttribute = await addAttributeToProduct(
+                                product.productId,
+                                attrInputData as AttributeInput,
+                            );
+                            attributeIdMap.set(clientAttributeId, createdApiAttribute.attributeId);
+                            // 新規AttributeのparamHasは、これに紐づくローカルParamの有無で決める
+                            const paramsEntryForNewAttr = currentParamsListState.find(
+                                (pl) =>
+                                    pl.productId === product.productId &&
+                                    pl.attributeId === clientAttributeId,
+                            );
+                            const hasLocalNewParams = !!(paramsEntryForNewAttr?.param || []).some(
+                                (p) => p._status === 'new',
+                            );
+                            finalAttributesForProduct.push({
+                                ...createdApiAttribute,
+                                params: [], // APIレスポンスでは空のはず
+                                paramHas: hasLocalNewParams, // ローカル状態を反映
+                                _status: 'synced',
+                            });
+                        } catch (e: any) {
+                            overallSuccess = false;
+                            console.error(e);
+                            finalAttributesForProduct.push(attr);
+                        }
+                    } else if (_status === 'updated' && clientAttributeId > 0) {
+                        try {
+                            const updatedApiAttribute = await updateProductAttribute(
+                                product.productId,
+                                clientAttributeId,
+                                attrInputData as AttributeInput,
+                            );
+                            finalAttributesForProduct.push({
+                                ...updatedApiAttribute,
+                                params: localParams || [], // ローカルのparamsを維持
+                                paramHas: localParamHas, // ローカルのparamHasを維持
+                                _status: 'synced',
+                            });
+                        } catch (e: any) {
+                            overallSuccess = false;
+                            console.error(e);
+                            finalAttributesForProduct.push(attr);
+                        }
                     } else if (_status !== 'deleted') {
-                        // synced or no status
-                        finalAttributesForThisProduct.push(attr);
+                        // synced or new (but parent product is new)
+                        finalAttributesForProduct.push(attr);
                     }
-                } catch (e: any) {
-                    overallSuccess = false;
-                    finalAttributesForThisProduct.push(attr); // エラー時は元のAttributeを戻す
-                    console.error(
-                        `Attribute (Client ID: ${clientAttributeId}, DB ID: ${attr.attributeId}) for Product ${product.productId} save/delete failed: ${e.message}`,
-                    );
                 }
-            }
-            product.attributes = finalAttributesForThisProduct
-                .filter((a) => a._status !== 'deleted')
-                .map((a, i) => ({ ...a, sortOrder: i, _status: 'synced' }));
-        }
-        // setProductData([...processedProducts]); // Attribute処理後のProductリストで状態更新
-
-        // --- Step 3: DetailTableData (Params) の AttributeId を仮IDからサーバーIDに更新 ---
-        let workingDetailTableData = detailTableData; // 現在のdetailTableDataをベースにする
-        if (attributeIdMap.size > 0) {
-            workingDetailTableData = detailTableData.map((paramsEntry) => {
-                if (attributeIdMap.has(paramsEntry.attributeId)) {
-                    // attributeIdが仮IDだったら
-                    return {
-                        ...paramsEntry,
-                        attributeId: attributeIdMap.get(paramsEntry.attributeId)!,
-                    };
-                }
-                return paramsEntry;
-            });
-            // setParamsData(workingDetailTableData); // 更新されたattributeIdを持つdetailTableDataを一旦セット
-        }
-
-        // --- Step 4: Params の処理 ---
-        const finalParamsDataList: Params[] = [];
-        for (const paramsEntry of workingDetailTableData) {
-            // 更新されたattributeIdを持つリストで処理
-            const parentProduct = processedProducts.find(
-                (p) => p.productId === paramsEntry.productId,
-            );
-            const parentAttribute = parentProduct?.attributes.find(
-                (a) => a.attributeId === paramsEntry.attributeId,
-            );
-
-            if (!parentAttribute || parentAttribute._status === 'deleted') {
-                // 親Attributeが存在しないか削除マークならParamsも処理しない
-                continue;
+                product.attributes = finalAttributesForProduct;
             }
 
-            const processedParamItems: ParamDetail[] = [];
-            const paramItemsToProcess = [...(paramsEntry.param || [])];
-            for (const item of paramItemsToProcess) {
-                const { _status, paramId: clientParamId, ...itemDataForApi } = item;
-                let paramApiInput: ParamItemInput;
-                try {
-                    if (item.type === 'type1')
-                        paramApiInput = {
-                            type: 'type1',
-                            code: (item as ParamType1).code,
-                            dispName: (item as ParamType1).dispName,
-                            sortOrder: item.sortOrder,
-                        };
-                    else if (item.type === 'type2')
-                        paramApiInput = {
-                            type: 'type2',
-                            min: (item as ParamType2).min,
-                            increment: (item as ParamType2).increment,
-                            sortOrder: item.sortOrder,
-                        };
-                    else if (item.type === 'type3')
-                        paramApiInput = {
-                            type: 'type3',
-                            code: (item as ParamType3).code,
-                            dispName: (item as ParamType3).dispName,
-                            sortOrder: item.sortOrder,
-                        };
-                    else {
-                        throw new Error(`Unknown param type: ${(item as any).type}`);
+            // --- Phase 3: Update attributeId in workingParamsList using attributeIdMap ---
+            if (attributeIdMap.size > 0) {
+                currentParamsListState = currentParamsListState.map((pl) => {
+                    if (attributeIdMap.has(pl.attributeId)) {
+                        // 仮のattributeIdだったら
+                        return { ...pl, attributeId: attributeIdMap.get(pl.attributeId)! };
                     }
+                    return pl;
+                });
+            }
 
-                    if (_status === 'new') {
-                        const created = await addParamToAttribute(
-                            paramsEntry.productId,
-                            paramsEntry.attributeId,
-                            paramApiInput,
-                        );
-                        processedParamItems.push({ ...created, _status: 'synced' });
-                        // paramIdMap.set(clientParamId, created.paramId); // 必要ならParamのIDマッピングも
-                    } else if (_status === 'updated') {
-                        const updated = await updateAttributeParam(
-                            paramsEntry.productId,
-                            paramsEntry.attributeId,
-                            item.paramId,
-                            paramApiInput,
-                        );
-                        processedParamItems.push({ ...updated, _status: 'synced' });
-                    } else if (_status === 'deleted' && item.paramId > 0) {
+            // --- Phase 4: Process Parameters (DELETE, UPDATE, CREATE) ---
+            const finalProcessedParamsList: Params[] = [];
+            for (const paramsEntry of currentParamsListState) {
+                const parentProduct = currentProductsState.find(
+                    (p) => p.productId === paramsEntry.productId,
+                );
+                const parentAttribute = parentProduct?.attributes.find(
+                    (a) => a.attributeId === paramsEntry.attributeId,
+                );
+
+                if (!parentAttribute || parentAttribute.attributeId < 0) {
+                    // 親Attributeが未保存(仮ID) or 存在しない
+                    if (paramsEntry.param && paramsEntry.param.length > 0)
+                        finalProcessedParamsList.push(paramsEntry); // 処理できなかったものとして保持
+                    continue;
+                }
+
+                let currentParamsInEntry = [...(paramsEntry.param || [])];
+                const finalParamsForThisEntry: ParamDetail[] = [];
+
+                const paramsToDeleteInEntry = currentParamsInEntry.filter(
+                    (p) => p._status === 'deleted' && p.paramId > 0,
+                );
+                for (const param of paramsToDeleteInEntry) {
+                    try {
                         await deleteAttributeParam(
                             paramsEntry.productId,
                             paramsEntry.attributeId,
-                            item.paramId,
+                            param.paramId,
                         );
-                    } else if (_status !== 'deleted') {
-                        processedParamItems.push(item);
+                    } catch (e: any) {
+                        overallSuccess = false;
+                        console.error(e); /* エラー処理 */
                     }
-                } catch (e: any) {
-                    overallSuccess = false;
-                    processedParamItems.push(item);
-                    console.error(
-                        `Param (Client ID: ${clientParamId}, DB ID: ${item.paramId}) for P:${paramsEntry.productId},A:${paramsEntry.attributeId} save/delete failed: ${e.message}`,
-                    );
+                }
+                currentParamsInEntry = currentParamsInEntry.filter(
+                    (p) => !(p._status === 'deleted' && p.paramId > 0),
+                );
+
+                for (const item of currentParamsInEntry) {
+                    const { _status, paramId: clientParamId, ...itemInputData } = item;
+                    let paramApiInput: ParamItemInput = itemInputData as ParamItemInput; // 型キャスト注意
+
+                    if (_status === 'new' && clientParamId < 0) {
+                        try {
+                            const createdParam = await addParamToAttribute(
+                                paramsEntry.productId,
+                                paramsEntry.attributeId,
+                                paramApiInput,
+                            );
+                            finalParamsForThisEntry.push({ ...createdParam, _status: 'synced' });
+                        } catch (e: any) {
+                            overallSuccess = false;
+                            console.error(e);
+                            finalParamsForThisEntry.push(item);
+                        }
+                    } else if (_status === 'updated' && clientParamId > 0) {
+                        try {
+                            const updatedParam = await updateAttributeParam(
+                                paramsEntry.productId,
+                                paramsEntry.attributeId,
+                                clientParamId,
+                                paramApiInput,
+                            );
+                            finalParamsForThisEntry.push({ ...updatedParam, _status: 'synced' });
+                        } catch (e: any) {
+                            overallSuccess = false;
+                            console.error(e);
+                            finalParamsForThisEntry.push(item);
+                        }
+                    } else if (_status !== 'deleted') {
+                        finalParamsForThisEntry.push(item);
+                    }
+                }
+                paramsEntry.param = finalParamsForThisEntry.map((p, i) => ({
+                    ...p,
+                    sortOrder: i,
+                    _status: 'synced' as ChangeStatus,
+                })) as ParamType1[] | ParamType2[] | ParamType3[];
+
+                // 親AttributeのparamHasとparamsを最終状態で更新
+                if (parentAttribute) {
+                    parentAttribute.params = paramsEntry.param;
+                    parentAttribute.paramHas = paramsEntry.param.length > 0;
+                }
+                if (paramsEntry.param.length > 0 || paramsToDeleteInEntry.length > 0) {
+                    finalProcessedParamsList.push(paramsEntry);
                 }
             }
-            const finalParamItemsForEntry = processedParamItems
-                .filter((p) => p._status !== 'deleted')
-                .map((p, i) => ({ ...p, sortOrder: i, _status: 'synced' as ChangeStatus }));
-            finalParamsDataList.push({
-                ...paramsEntry,
-                param: finalParamItemsForEntry as ParamType1[] | ParamType2[] | ParamType3[],
-            });
+            currentParamsListState = finalProcessedParamsList;
+
+            // --- Phase 5: 最終的な状態でstateを更新 ---
+            setProductData(
+                currentProductsState.map((p) => ({
+                    ...p,
+                    _status: 'synced',
+                    attributes: (p.attributes || []).map((a) => ({ ...a, _status: 'synced' })),
+                })),
+            );
+            setParamsData(
+                currentParamsListState.map((pl) => ({
+                    ...pl,
+                    param: (pl.param || []).map((p) => ({ ...p, _status: 'synced' })) as
+                        | ParamType1[]
+                        | ParamType2[]
+                        | ParamType3[],
+                })),
+            );
+        } catch (e: any) {
+            console.error('An unexpected error occurred during save:');
+            setError(e.message || '保存処理中に予期せぬエラーが発生しました。');
+            overallSuccess = false;
+        } finally {
+            setIsSaving(false);
         }
 
-        // 最後にまとめて状態を更新
-        setProductData(
-            processedProducts
-                .filter((p) => p._status !== 'deleted')
-                .map((p) => ({ ...p, _status: 'synced' })),
-        );
-        setParamsData(finalParamsDataList);
-
-        setIsSaving(false);
-
         if (overallSuccess) {
-            alert('変更が保存されました。\n(Product自体の新規/更新/削除APIはログ出力のみです。)');
-            globalTempProductIdCounter = -1; // グローバル仮IDカウンターリセット
+            alert('変更が保存されました。\n(Product自体のAPIはログのみ)');
+            globalTempProductIdCounter = -1;
             globalTempAttributeIdCounter = -1;
-            globalTempParamIdCounter = -1; // DetailTableContext内のカウンターもリセットする方法が必要
-            // またはDetailTableContextが提供するリセット関数を呼ぶ
+            globalTempParamIdCounter = -1;
+            await loadInitialData(false); // データを再ロードしてクリーンな状態にする
         } else {
-            setError('一部の変更の保存に失敗しました。詳細はコンソールを確認してください。');
+            if (!error)
+                setError('一部の変更の保存に失敗しました。詳細はコンソールを確認してください。');
+            // エラー時はUIの整合性のため、変更前の状態に戻すか、再ロードを促す
+            // ここでは再ロードで対応
+            await loadInitialData(false);
         }
     }, [baseTableData, detailTableData, setProductData, setParamsData, loadInitialData, error]);
 
