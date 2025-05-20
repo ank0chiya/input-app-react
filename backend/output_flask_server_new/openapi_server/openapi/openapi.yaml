@@ -1,0 +1,1142 @@
+openapi: 3.0.3
+info:
+  description: "API for managing products, their components, attributes, and parameters."
+  title: Product API
+  version: v1.0.0
+servers:
+- url: /
+paths:
+  /api/products:
+    get:
+      operationId: list_products
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Product'
+                type: array
+          description: A list of products.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unexpected error
+      summary: List all products
+      tags:
+      - Products
+      x-openapi-router-controller: openapi_server.controllers.products_controller
+  /api/products/{prod_id}/attributes:
+    post:
+      operationId: add_product_attribute
+      parameters:
+      - description: ID of the product.
+        explode: false
+        in: path
+        name: prod_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributeCreationInput'
+        description: Attribute object to add. Client specifies attribute_code. Params
+          are managed separately.
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+          description: Attribute created successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid input.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Attribute with the given attribute_code already exists.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unexpected error
+      summary: Add an attribute to a product's component
+      tags:
+      - Attributes
+      x-openapi-router-controller: openapi_server.controllers.attributes_controller
+  /api/products/{prod_id}/attributes/{attribute_code}:
+    delete:
+      operationId: delete_product_attribute
+      parameters:
+      - description: ID of the product.
+        explode: false
+        in: path
+        name: prod_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Code of the attribute to delete.
+        explode: false
+        in: path
+        name: attribute_code
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Attribute deleted successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product or Attribute not found.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unexpected error
+      summary: Delete an attribute from a product's component
+      tags:
+      - Attributes
+      x-openapi-router-controller: openapi_server.controllers.attributes_controller
+    put:
+      operationId: update_product_attribute
+      parameters:
+      - description: ID of the product.
+        explode: false
+        in: path
+        name: prod_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Code of the attribute to update.
+        explode: false
+        in: path
+        name: attribute_code
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributeInput'
+        description: "Attribute object to update (attribute_code is in path, params\
+          \ are managed separately)."
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+          description: Attribute updated successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid input.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product or Attribute not found.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unexpected error
+      summary: Update an attribute of a product's component
+      tags:
+      - Attributes
+      x-openapi-router-controller: openapi_server.controllers.attributes_controller
+  /api/products/{prod_id}/attributes/{attribute_code}/params:
+    post:
+      operationId: add_attribute_param
+      parameters:
+      - description: ID of the product.
+        explode: false
+        in: path
+        name: prod_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Code of the attribute.
+        explode: false
+        in: path
+        name: attribute_code
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamCreationInput'
+        description: Parameter object to add. Client specifies param_code.
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+          description: Parameter created successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid input.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Product or Attribute not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Parameter with the given param_code already exists for this
+            attribute.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unexpected error
+      summary: Add a parameter to an attribute
+      tags:
+      - Params
+      x-openapi-router-controller: openapi_server.controllers.params_controller
+  /api/products/{prod_id}/attributes/{attribute_code}/params/{param_code}:
+    delete:
+      operationId: delete_attribute_param
+      parameters:
+      - description: ID of the product.
+        explode: false
+        in: path
+        name: prod_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Code of the attribute.
+        explode: false
+        in: path
+        name: attribute_code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Code of the parameter to delete.
+        explode: false
+        in: path
+        name: param_code
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Parameter deleted successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: "Product, Attribute or Param not found."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unexpected error
+      summary: Delete a parameter from an attribute
+      tags:
+      - Params
+      x-openapi-router-controller: openapi_server.controllers.params_controller
+    put:
+      operationId: update_attribute_param
+      parameters:
+      - description: ID of the product.
+        explode: false
+        in: path
+        name: prod_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Code of the attribute.
+        explode: false
+        in: path
+        name: attribute_code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Code of the parameter to update.
+        explode: false
+        in: path
+        name: param_code
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamInput'
+        description: Parameter object to update (param_code is in path).
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+          description: Parameter updated successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid input.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: "Product, Attribute or Param not found."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unexpected error
+      summary: Update a parameter of an attribute
+      tags:
+      - Params
+      x-openapi-router-controller: openapi_server.controllers.params_controller
+components:
+  schemas:
+    Product:
+      example:
+        components:
+        - deliv_flg: true
+          components_type: abcdef
+          label_cls: "0"
+          component_name: abcdef
+          attributes:
+          - required_flg: false
+            unit: unit
+            disp_name: disp_name
+            type1_number: 1
+            type: type1
+            params:
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            attribute_code: attribute_code
+          - required_flg: false
+            unit: unit
+            disp_name: disp_name
+            type1_number: 1
+            type: type1
+            params:
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            attribute_code: attribute_code
+        - deliv_flg: true
+          components_type: abcdef
+          label_cls: "0"
+          component_name: abcdef
+          attributes:
+          - required_flg: false
+            unit: unit
+            disp_name: disp_name
+            type1_number: 1
+            type: type1
+            params:
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            attribute_code: attribute_code
+          - required_flg: false
+            unit: unit
+            disp_name: disp_name
+            type1_number: 1
+            type: type1
+            params:
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            - order_stop_data: "20200920"
+              param_code: pcode1
+              disp_name: paramcode1
+              sort_order: 0
+            attribute_code: attribute_code
+        prod_id: "11"
+      properties:
+        prod_id:
+          example: "11"
+          title: prod_id
+          type: string
+        components:
+          items:
+            $ref: '#/components/schemas/Component'
+          title: components
+          type: array
+      required:
+      - components
+      - prod_id
+      title: Product
+      type: object
+    Component:
+      example:
+        deliv_flg: true
+        components_type: abcdef
+        label_cls: "0"
+        component_name: abcdef
+        attributes:
+        - required_flg: false
+          unit: unit
+          disp_name: disp_name
+          type1_number: 1
+          type: type1
+          params:
+          - order_stop_data: "20200920"
+            param_code: pcode1
+            disp_name: paramcode1
+            sort_order: 0
+          - order_stop_data: "20200920"
+            param_code: pcode1
+            disp_name: paramcode1
+            sort_order: 0
+          attribute_code: attribute_code
+        - required_flg: false
+          unit: unit
+          disp_name: disp_name
+          type1_number: 1
+          type: type1
+          params:
+          - order_stop_data: "20200920"
+            param_code: pcode1
+            disp_name: paramcode1
+            sort_order: 0
+          - order_stop_data: "20200920"
+            param_code: pcode1
+            disp_name: paramcode1
+            sort_order: 0
+          attribute_code: attribute_code
+      properties:
+        components_type:
+          example: abcdef
+          title: components_type
+          type: string
+        component_name:
+          example: abcdef
+          title: component_name
+          type: string
+        deliv_flg:
+          example: true
+          title: deliv_flg
+          type: boolean
+        label_cls:
+          example: "0"
+          title: label_cls
+          type: string
+        attributes:
+          items:
+            $ref: '#/components/schemas/Attribute'
+          title: attributes
+          type: array
+      required:
+      - attributes
+      - component_name
+      - components_type
+      - deliv_flg
+      - label_cls
+      title: Component
+      type: object
+    Attribute:
+      discriminator:
+        mapping:
+          type1: '#/components/schemas/AttributeType1'
+          type2: '#/components/schemas/AttributeType2'
+          type3: '#/components/schemas/AttributeType3'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/AttributeType1'
+      - $ref: '#/components/schemas/AttributeType2'
+      - $ref: '#/components/schemas/AttributeType3'
+      title: Attribute
+    AttributeBase:
+      properties:
+        attribute_code:
+          title: attribute_code
+          type: string
+        disp_name:
+          title: disp_name
+          type: string
+        unit:
+          title: unit
+          type: string
+        type:
+          enum:
+          - type1
+          - type2
+          - type3
+          title: type
+          type: string
+      required:
+      - attribute_code
+      - disp_name
+      - type
+      - unit
+      title: AttributeBase
+      type: object
+    AttributeType1:
+      allOf:
+      - $ref: '#/components/schemas/AttributeBase'
+      - properties:
+          type:
+            enum:
+            - type1
+            type: string
+          type1_number:
+            example: 1
+            type: integer
+          required_flg:
+            example: false
+            type: boolean
+          params:
+            items:
+              $ref: '#/components/schemas/Param'
+            type: array
+        required:
+        - params
+        - required_flg
+        - type
+        - type1_number
+        type: object
+      example:
+        required_flg: false
+        unit: unit
+        disp_name: disp_name
+        type1_number: 1
+        type: type1
+        params:
+        - order_stop_data: "20200920"
+          param_code: pcode1
+          disp_name: paramcode1
+          sort_order: 0
+        - order_stop_data: "20200920"
+          param_code: pcode1
+          disp_name: paramcode1
+          sort_order: 0
+        attribute_code: attribute_code
+      title: AttributeType1
+    AttributeType2:
+      allOf:
+      - $ref: '#/components/schemas/AttributeBase'
+      - properties:
+          type:
+            enum:
+            - type2
+            type: string
+          type2_number:
+            example: 1
+            type: integer
+          max:
+            example: 100
+            type: integer
+          min:
+            example: 10
+            type: integer
+          increment:
+            example: 5
+            type: integer
+        required:
+        - increment
+        - max
+        - min
+        - type
+        - type2_number
+        type: object
+      title: AttributeType2
+    AttributeType3:
+      allOf:
+      - $ref: '#/components/schemas/AttributeBase'
+      - properties:
+          type:
+            enum:
+            - type3
+            type: string
+          data_type:
+            example: string
+            type: string
+          setting_type:
+            example: select
+            type: string
+          mgmt_flg:
+            example: true
+            type: boolean
+          sec_mask:
+            example: true
+            type: boolean
+          input_format:
+            example: ""
+            type: string
+          width:
+            example: 100
+            type: integer
+          max:
+            example: 10
+            type: integer
+          min:
+            example: 1
+            type: integer
+          required_flg:
+            example: false
+            type: boolean
+          list_flg:
+            example: false
+            type: boolean
+          ui_flg:
+            example: false
+            type: boolean
+          api_cls:
+            example: "0"
+            type: string
+          edit_cls:
+            example: "0"
+            type: string
+          cont_cls:
+            example: "0"
+            type: string
+          sort_order:
+            example: 1
+            type: integer
+          init_online:
+            example: "0"
+            type: string
+          init_paper:
+            example: "0"
+            type: string
+          check:
+            example: ""
+            type: string
+          params:
+            items:
+              $ref: '#/components/schemas/Param'
+            type: array
+        required:
+        - api_cls
+        - check
+        - cont_cls
+        - data_type
+        - edit_cls
+        - init_online
+        - init_paper
+        - input_format
+        - list_flg
+        - max
+        - mgmt_flg
+        - min
+        - params
+        - required_flg
+        - sec_mask
+        - setting_type
+        - sort_order
+        - type
+        - ui_flg
+        - width
+        type: object
+      title: AttributeType3
+    AttributeInput:
+      discriminator:
+        mapping:
+          type1: '#/components/schemas/AttributeType1Input'
+          type2: '#/components/schemas/AttributeType2Input'
+          type3: '#/components/schemas/AttributeType3Input'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/AttributeType1Input'
+      - $ref: '#/components/schemas/AttributeType2Input'
+      - $ref: '#/components/schemas/AttributeType3Input'
+      title: AttributeInput
+    AttributeType1Input:
+      example:
+        required_flg: true
+        unit: unit
+        disp_name: disp_name
+        type1_number: 0
+        type: type1
+      properties:
+        disp_name:
+          title: disp_name
+          type: string
+        unit:
+          title: unit
+          type: string
+        type:
+          enum:
+          - type1
+          title: type
+          type: string
+        type1_number:
+          title: type1_number
+          type: integer
+        required_flg:
+          title: required_flg
+          type: boolean
+      required:
+      - disp_name
+      - required_flg
+      - type
+      - type1_number
+      - unit
+      title: AttributeType1Input
+      type: object
+    AttributeType2Input:
+      properties:
+        disp_name:
+          title: disp_name
+          type: string
+        unit:
+          title: unit
+          type: string
+        type:
+          enum:
+          - type2
+          title: type
+          type: string
+        type2_number:
+          title: type2_number
+          type: integer
+        max:
+          title: max
+          type: integer
+        min:
+          title: min
+          type: integer
+        increment:
+          title: increment
+          type: integer
+      required:
+      - disp_name
+      - increment
+      - max
+      - min
+      - type
+      - type2_number
+      - unit
+      title: AttributeType2Input
+      type: object
+    AttributeType3Input:
+      properties:
+        disp_name:
+          title: disp_name
+          type: string
+        unit:
+          title: unit
+          type: string
+        type:
+          enum:
+          - type3
+          title: type
+          type: string
+        data_type:
+          title: data_type
+          type: string
+        setting_type:
+          title: setting_type
+          type: string
+        mgmt_flg:
+          title: mgmt_flg
+          type: boolean
+        sec_mask:
+          title: sec_mask
+          type: boolean
+        input_format:
+          title: input_format
+          type: string
+        width:
+          title: width
+          type: integer
+        max:
+          title: max
+          type: integer
+        min:
+          title: min
+          type: integer
+        required_flg:
+          title: required_flg
+          type: boolean
+        list_flg:
+          title: list_flg
+          type: boolean
+        ui_flg:
+          title: ui_flg
+          type: boolean
+        api_cls:
+          title: api_cls
+          type: string
+        edit_cls:
+          title: edit_cls
+          type: string
+        cont_cls:
+          title: cont_cls
+          type: string
+        sort_order:
+          title: sort_order
+          type: integer
+        init_online:
+          title: init_online
+          type: string
+        init_paper:
+          title: init_paper
+          type: string
+        check:
+          title: check
+          type: string
+      required:
+      - data_type
+      - disp_name
+      - list_flg
+      - mgmt_flg
+      - required_flg
+      - sec_mask
+      - setting_type
+      - type
+      - ui_flg
+      - unit
+      title: AttributeType3Input
+      type: object
+    ParamInput:
+      example:
+        order_stop_data: order_stop_data
+        disp_name: disp_name
+        sort_order: 0
+      properties:
+        disp_name:
+          title: disp_name
+          type: string
+        sort_order:
+          title: sort_order
+          type: integer
+        order_stop_data:
+          title: order_stop_data
+          type: string
+      required:
+      - disp_name
+      - sort_order
+      title: ParamInput
+      type: object
+    AttributeCreationInput:
+      discriminator:
+        mapping:
+          type1: '#/components/schemas/AttributeType1CreationInput'
+          type2: '#/components/schemas/AttributeType2CreationInput'
+          type3: '#/components/schemas/AttributeType3CreationInput'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/AttributeType1CreationInput'
+      - $ref: '#/components/schemas/AttributeType2CreationInput'
+      - $ref: '#/components/schemas/AttributeType3CreationInput'
+      title: AttributeCreationInput
+    AttributeType1CreationInput:
+      example:
+        required_flg: true
+        unit: unit
+        disp_name: disp_name
+        type1_number: 0
+        type: type1
+        attribute_code: attribute_code
+      properties:
+        attribute_code:
+          title: attribute_code
+          type: string
+        disp_name:
+          title: disp_name
+          type: string
+        unit:
+          title: unit
+          type: string
+        type:
+          enum:
+          - type1
+          title: type
+          type: string
+        type1_number:
+          title: type1_number
+          type: integer
+        required_flg:
+          title: required_flg
+          type: boolean
+      required:
+      - attribute_code
+      - disp_name
+      - required_flg
+      - type
+      - type1_number
+      - unit
+      title: AttributeType1CreationInput
+      type: object
+    AttributeType2CreationInput:
+      properties:
+        attribute_code:
+          title: attribute_code
+          type: string
+        disp_name:
+          title: disp_name
+          type: string
+        unit:
+          title: unit
+          type: string
+        type:
+          enum:
+          - type2
+          title: type
+          type: string
+        type2_number:
+          title: type2_number
+          type: integer
+        max:
+          title: max
+          type: integer
+        min:
+          title: min
+          type: integer
+        increment:
+          title: increment
+          type: integer
+      required:
+      - attribute_code
+      - disp_name
+      - increment
+      - max
+      - min
+      - type
+      - type2_number
+      - unit
+      title: AttributeType2CreationInput
+      type: object
+    AttributeType3CreationInput:
+      properties:
+        attribute_code:
+          title: attribute_code
+          type: string
+        disp_name:
+          title: disp_name
+          type: string
+        unit:
+          title: unit
+          type: string
+        type:
+          enum:
+          - type3
+          title: type
+          type: string
+        data_type:
+          title: data_type
+          type: string
+        setting_type:
+          title: setting_type
+          type: string
+        mgmt_flg:
+          title: mgmt_flg
+          type: boolean
+        sec_mask:
+          title: sec_mask
+          type: boolean
+        input_format:
+          title: input_format
+          type: string
+        width:
+          title: width
+          type: integer
+        max:
+          title: max
+          type: integer
+        min:
+          title: min
+          type: integer
+        required_flg:
+          title: required_flg
+          type: boolean
+        list_flg:
+          title: list_flg
+          type: boolean
+        ui_flg:
+          title: ui_flg
+          type: boolean
+        api_cls:
+          title: api_cls
+          type: string
+        edit_cls:
+          title: edit_cls
+          type: string
+        cont_cls:
+          title: cont_cls
+          type: string
+        sort_order:
+          title: sort_order
+          type: integer
+        init_online:
+          title: init_online
+          type: string
+        init_paper:
+          title: init_paper
+          type: string
+        check:
+          title: check
+          type: string
+      required:
+      - attribute_code
+      - data_type
+      - disp_name
+      - list_flg
+      - mgmt_flg
+      - required_flg
+      - sec_mask
+      - setting_type
+      - type
+      - ui_flg
+      - unit
+      title: AttributeType3CreationInput
+      type: object
+    ParamCreationInput:
+      example:
+        order_stop_data: order_stop_data
+        param_code: param_code
+        disp_name: disp_name
+        sort_order: 0
+      properties:
+        param_code:
+          title: param_code
+          type: string
+        disp_name:
+          title: disp_name
+          type: string
+        sort_order:
+          title: sort_order
+          type: integer
+        order_stop_data:
+          title: order_stop_data
+          type: string
+      required:
+      - disp_name
+      - param_code
+      - sort_order
+      title: ParamCreationInput
+      type: object
+    Param:
+      example:
+        order_stop_data: "20200920"
+        param_code: pcode1
+        disp_name: paramcode1
+        sort_order: 0
+      properties:
+        param_code:
+          example: pcode1
+          title: param_code
+          type: string
+        disp_name:
+          example: paramcode1
+          title: disp_name
+          type: string
+        sort_order:
+          example: 0
+          title: sort_order
+          type: integer
+        order_stop_data:
+          example: "20200920"
+          title: order_stop_data
+          type: string
+      required:
+      - disp_name
+      - param_code
+      - sort_order
+      title: Param
+      type: object
+    Error:
+      example:
+        code: 0
+        message: message
+      properties:
+        code:
+          format: int32
+          title: code
+          type: integer
+        message:
+          title: message
+          type: string
+      required:
+      - code
+      - message
+      title: Error
+      type: object
+    SuccessResponse:
+      example:
+        message: success
+      properties:
+        message:
+          example: success
+          title: message
+          type: string
+      required:
+      - message
+      title: SuccessResponse
+      type: object

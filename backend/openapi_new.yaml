@@ -1,0 +1,852 @@
+openapi: 3.0.3
+info:
+  title: Product API
+  version: v1.0.0
+  description: API for managing products, their components, attributes, and parameters.
+
+paths:
+  /api/products:
+    get:
+      summary: List all products
+      operationId: listProducts
+      tags:
+        - Products
+      responses:
+        '200':
+          description: A list of products.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/products/{prod_id}/attributes:
+    post:
+      summary: Add an attribute to a product's component
+      operationId: addProductAttribute
+      tags:
+        - Attributes
+      parameters:
+        - name: prod_id
+          in: path
+          required: true
+          description: ID of the product.
+          schema:
+            type: string
+      requestBody:
+        description: Attribute object to add. Client specifies attribute_code. Params are managed separately.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributeCreationInput'
+      responses:
+        '201':
+          description: Attribute created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Product not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Attribute with the given attribute_code already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/products/{prod_id}/attributes/{attribute_code}:
+    put:
+      summary: Update an attribute of a product's component
+      operationId: updateProductAttribute
+      tags:
+        - Attributes
+      parameters:
+        - name: prod_id
+          in: path
+          required: true
+          description: ID of the product.
+          schema:
+            type: string
+        - name: attribute_code
+          in: path
+          required: true
+          description: Code of the attribute to update.
+          schema:
+            type: string
+      requestBody:
+        description: Attribute object to update (attribute_code is in path, params are managed separately).
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributeInput'
+      responses:
+        '200':
+          description: Attribute updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Product or Attribute not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete an attribute from a product's component
+      operationId: deleteProductAttribute
+      tags:
+        - Attributes
+      parameters:
+        - name: prod_id
+          in: path
+          required: true
+          description: ID of the product.
+          schema:
+            type: string
+        - name: attribute_code
+          in: path
+          required: true
+          description: Code of the attribute to delete.
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Attribute deleted successfully.
+        '404':
+          description: Product or Attribute not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/products/{prod_id}/attributes/{attribute_code}/params:
+    post:
+      summary: Add a parameter to an attribute
+      operationId: addAttributeParam
+      tags:
+        - Params
+      parameters:
+        - name: prod_id
+          in: path
+          required: true
+          description: ID of the product.
+          schema:
+            type: string
+        - name: attribute_code
+          in: path
+          required: true
+          description: Code of the attribute.
+          schema:
+            type: string
+      requestBody:
+        description: Parameter object to add. Client specifies param_code.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamCreationInput'
+      responses:
+        '201':
+          description: Parameter created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Product or Attribute not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Parameter with the given param_code already exists for this attribute.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/products/{prod_id}/attributes/{attribute_code}/params/{param_code}:
+    put:
+      summary: Update a parameter of an attribute
+      operationId: updateAttributeParam
+      tags:
+        - Params
+      parameters:
+        - name: prod_id
+          in: path
+          required: true
+          description: ID of the product.
+          schema:
+            type: string
+        - name: attribute_code
+          in: path
+          required: true
+          description: Code of the attribute.
+          schema:
+            type: string
+        - name: param_code
+          in: path
+          required: true
+          description: Code of the parameter to update.
+          schema:
+            type: string
+      requestBody:
+        description: Parameter object to update (param_code is in path).
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamInput'
+      responses:
+        '200':
+          description: Parameter updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Product, Attribute or Param not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a parameter from an attribute
+      operationId: deleteAttributeParam
+      tags:
+        - Params
+      parameters:
+        - name: prod_id
+          in: path
+          required: true
+          description: ID of the product.
+          schema:
+            type: string
+        - name: attribute_code
+          in: path
+          required: true
+          description: Code of the attribute.
+          schema:
+            type: string
+        - name: param_code
+          in: path
+          required: true
+          description: Code of the parameter to delete.
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Parameter deleted successfully.
+        '404':
+          description: Product, Attribute or Param not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        prod_id:
+          type: string
+          example: "11"
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/Component'
+      required:
+        - prod_id
+        - components
+
+    Component:
+      type: object
+      properties:
+        components_type:
+          type: string
+          example: "abcdef"
+        component_name:
+          type: string
+          example: "abcdef"
+        deliv_flg:
+          type: boolean
+          example: true
+        label_cls:
+          type: string
+          example: "0"
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribute'
+      required:
+        - components_type
+        - component_name
+        - deliv_flg
+        - label_cls
+        - attributes
+
+    Attribute: # Response schema for Attribute (includes params)
+      oneOf:
+        - $ref: '#/components/schemas/AttributeType1'
+        - $ref: '#/components/schemas/AttributeType2'
+        - $ref: '#/components/schemas/AttributeType3'
+      discriminator:
+        propertyName: type
+        mapping:
+          type1: '#/components/schemas/AttributeType1'
+          type2: '#/components/schemas/AttributeType2'
+          type3: '#/components/schemas/AttributeType3'
+
+    AttributeBase:
+      type: object
+      properties:
+        attribute_code:
+          type: string
+        disp_name:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: ["type1", "type2", "type3"]
+      required:
+        - attribute_code
+        - disp_name
+        - unit
+        - type
+
+    AttributeType1: # Response schema for AttributeType1 (includes params)
+      allOf:
+        - $ref: '#/components/schemas/AttributeBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: ["type1"]
+            type1_number:
+              type: integer
+              example: 1
+            required_flg:
+              type: boolean
+              example: false
+            params:
+              type: array
+              items:
+                $ref: '#/components/schemas/Param'
+          required:
+            - type
+            - type1_number
+            - required_flg
+            - params
+
+    AttributeType2: # Response schema for AttributeType2 (no params in sample)
+      allOf:
+        - $ref: '#/components/schemas/AttributeBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: ["type2"]
+            type2_number:
+              type: integer
+              example: 1
+            max:
+              type: integer
+              example: 100
+            min:
+              type: integer
+              example: 10
+            increment:
+              type: integer
+              example: 5
+          required:
+            - type
+            - type2_number
+            - max
+            - min
+            - increment
+
+    AttributeType3: # Response schema for AttributeType3 (includes params)
+      allOf:
+        - $ref: '#/components/schemas/AttributeBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: ["type3"]
+            data_type:
+              type: string
+              example: "string"
+            setting_type:
+              type: string
+              example: "select"
+            mgmt_flg:
+              type: boolean
+              example: true
+            sec_mask:
+              type: boolean
+              example: true
+            input_format:
+              type: string
+              example: ""
+            width:
+              type: integer
+              example: 100
+            max:
+              type: integer
+              example: 10
+            min:
+              type: integer
+              example: 1
+            required_flg:
+              type: boolean
+              example: false
+            list_flg:
+              type: boolean
+              example: false
+            ui_flg:
+              type: boolean
+              example: false
+            api_cls:
+              type: string
+              example: "0"
+            edit_cls:
+              type: string
+              example: "0"
+            cont_cls:
+              type: string
+              example: "0"
+            sort_order:
+              type: integer
+              example: 1
+            init_online:
+              type: string
+              example: "0"
+            init_paper:
+              type: string
+              example: "0"
+            check:
+              type: string
+              example: ""
+            params:
+              type: array
+              items:
+                $ref: '#/components/schemas/Param'
+          required:
+            - type
+            - data_type
+            - setting_type
+            - mgmt_flg
+            - sec_mask
+            - input_format
+            - width
+            - max
+            - min
+            - required_flg
+            - list_flg
+            - ui_flg
+            - api_cls
+            - edit_cls
+            - cont_cls
+            - sort_order
+            - init_online
+            - init_paper
+            - check
+            - params
+
+    # --- Schemas for PUT (Update) requests ---
+    AttributeInput: # For PUT .../attributes/{attribute_code} (attribute_code from path, params managed separately)
+      oneOf:
+        - $ref: '#/components/schemas/AttributeType1Input'
+        - $ref: '#/components/schemas/AttributeType2Input'
+        - $ref: '#/components/schemas/AttributeType3Input'
+      discriminator:
+        propertyName: type
+        mapping:
+          type1: '#/components/schemas/AttributeType1Input'
+          type2: '#/components/schemas/AttributeType2Input'
+          type3: '#/components/schemas/AttributeType3Input'
+
+    AttributeType1Input: # For PUT - no attribute_code in body, no params in body
+      type: object
+      properties:
+        disp_name:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: ["type1"]
+        type1_number:
+          type: integer
+        required_flg:
+          type: boolean
+      required:
+        - disp_name
+        - unit
+        - type
+        - type1_number
+        - required_flg
+
+    AttributeType2Input: # For PUT - no attribute_code in body
+      type: object
+      properties:
+        disp_name:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: ["type2"]
+        type2_number:
+          type: integer
+        max:
+          type: integer
+        min:
+          type: integer
+        increment:
+          type: integer
+      required:
+        - disp_name
+        - unit
+        - type
+        - type2_number
+        - max
+        - min
+        - increment
+
+    AttributeType3Input: # For PUT - no attribute_code in body, no params in body
+      type: object
+      properties:
+        disp_name:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: ["type3"]
+        data_type:
+          type: string
+        setting_type:
+          type: string
+        mgmt_flg:
+          type: boolean
+        sec_mask:
+          type: boolean
+        input_format:
+          type: string
+        width:
+          type: integer
+        max:
+          type: integer
+        min:
+          type: integer
+        required_flg:
+          type: boolean
+        list_flg:
+          type: boolean
+        ui_flg:
+          type: boolean
+        api_cls:
+          type: string
+        edit_cls:
+          type: string
+        cont_cls:
+          type: string
+        sort_order:
+          type: integer
+        init_online:
+          type: string
+        init_paper:
+          type: string
+        check:
+          type: string
+      required:
+        - disp_name
+        - unit
+        - type
+        - data_type
+        - setting_type
+        - mgmt_flg
+        - sec_mask
+        - required_flg
+        - list_flg
+        - ui_flg
+        # Add other required fields for update based on your API logic
+
+    ParamInput: # For PUT .../params/{param_code} (param_code from path)
+      type: object
+      properties:
+        disp_name:
+          type: string
+        sort_order:
+          type: integer
+        order_stop_data:
+          type: string
+      required:
+        - disp_name
+        - sort_order
+        # order_stop_data: required if always needed for update
+
+    # --- Schemas for POST (Create) requests ---
+    AttributeCreationInput: # For POST .../attributes (client provides attribute_code, params managed separately)
+      oneOf:
+        - $ref: '#/components/schemas/AttributeType1CreationInput'
+        - $ref: '#/components/schemas/AttributeType2CreationInput'
+        - $ref: '#/components/schemas/AttributeType3CreationInput'
+      discriminator:
+        propertyName: type
+        mapping:
+          type1: '#/components/schemas/AttributeType1CreationInput'
+          type2: '#/components/schemas/AttributeType2CreationInput'
+          type3: '#/components/schemas/AttributeType3CreationInput'
+
+    AttributeType1CreationInput: # For POST - client provides attribute_code in body, no params in body
+      type: object
+      properties:
+        attribute_code:
+          type: string
+        disp_name:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: ["type1"]
+        type1_number:
+          type: integer
+        required_flg:
+          type: boolean
+      required:
+        - attribute_code
+        - disp_name
+        - unit
+        - type
+        - type1_number
+        - required_flg
+
+    AttributeType2CreationInput: # For POST - client provides attribute_code in body
+      type: object
+      properties:
+        attribute_code:
+          type: string
+        disp_name:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: ["type2"]
+        type2_number:
+          type: integer
+        max:
+          type: integer
+        min:
+          type: integer
+        increment:
+          type: integer
+      required:
+        - attribute_code
+        - disp_name
+        - unit
+        - type
+        - type2_number
+        - max
+        - min
+        - increment
+
+    AttributeType3CreationInput: # For POST - client provides attribute_code in body, no params in body
+      type: object
+      properties:
+        attribute_code:
+          type: string
+        disp_name:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: ["type3"]
+        data_type:
+          type: string
+        setting_type:
+          type: string
+        mgmt_flg:
+          type: boolean
+        sec_mask:
+          type: boolean
+        input_format:
+          type: string
+        width:
+          type: integer
+        max:
+          type: integer
+        min:
+          type: integer
+        required_flg:
+          type: boolean
+        list_flg:
+          type: boolean
+        ui_flg:
+          type: boolean
+        api_cls:
+          type: string
+        edit_cls:
+          type: string
+        cont_cls:
+          type: string
+        sort_order:
+          type: integer
+        init_online:
+          type: string
+        init_paper:
+          type: string
+        check:
+          type: string
+      required:
+        - attribute_code
+        - disp_name
+        - unit
+        - type
+        - data_type
+        - setting_type
+        - mgmt_flg
+        - sec_mask
+        - required_flg
+        - list_flg
+        - ui_flg
+        # Add other required fields for creation based on your API logic
+
+    ParamCreationInput: # For POST .../params (client provides param_code)
+      type: object
+      properties:
+        param_code:
+          type: string
+        disp_name:
+          type: string
+        sort_order:
+          type: integer
+        order_stop_data:
+          type: string
+      required:
+        - param_code
+        - disp_name
+        - sort_order
+        # order_stop_data: required if always needed for creation
+
+    Param: # Response schema for Param
+      type: object
+      properties:
+        param_code:
+          type: string
+          example: "pcode1"
+        disp_name:
+          type: string
+          example: "paramcode1"
+        sort_order:
+          type: integer
+          example: 0
+        order_stop_data:
+          type: string
+          example: "20200920"
+      required:
+        - param_code
+        - disp_name
+        - sort_order
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "success"
+      required:
+        - message

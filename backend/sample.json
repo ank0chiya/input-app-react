@@ -1,0 +1,83 @@
+[
+    {
+        "prod_id": "11",
+        "components": [
+            {
+                "components_type": "abcdef",
+                "component_name": "abcdef",
+                "deliv_flg": true,
+                "label_cls": "0",
+                "attributes": [
+                    {
+                        "attribute_code": "acodeg",
+                        "disp_name": "attrcodeg",
+                        "unit": "G",
+                        "type": "type1",
+                        "type1_number": 1,
+                        "required_flg": false,
+                        "params": [
+                            {
+                                "param_code": "pcode1",
+                                "disp_name": "paramcode1",
+                                "sort_order": 0,
+                                "order_stop_data": "20200920"
+                            },
+                            {
+                                "param_code": "pcode2",
+                                "disp_name": "paramcode2",
+                                "sort_order": 1,
+                                "order_stop_data": "20200920"
+                            }
+                        ]
+                    },
+                    {
+                        "attribute_code": "acoder",
+                        "disp_name": "attrcoder",
+                        "unit": "R",
+                        "type": "type2",
+                        "type2_number": 1,
+                        "max": 100,
+                        "min": 10,
+                        "increment": 5
+                    },
+                    {
+                        "attribute_code": "acodec",
+                        "disp_name": "attrcodec",
+                        "unit": "C",
+                        "type": "type3",
+                        "data_type": "string",
+                        "setting_type": "select",
+                        "mgmt_flg": true,
+                        "sec_mask": true,
+                        "input_format": "",
+                        "width": 100,
+                        "max": 10,
+                        "min": 1,
+                        "required_flg": false,
+                        "list_flg": false,
+                        "ui_flg": false,
+                        "api_cls": "0",
+                        "edit_cls": "0",
+                        "cont_cls": "0",
+                        "sort_order": 1,
+                        "init_online": "0",
+                        "init_paper": "0",
+                        "check": "",
+                        "params": [
+                            {
+                                "param_code": "pcode1",
+                                "disp_name": "paramcode1",
+                                "sort_order": 0
+                            },
+                            {
+                                "param_code": "pcode2",
+                                "disp_name": "paramcode2",
+                                "sort_order": 1
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]
